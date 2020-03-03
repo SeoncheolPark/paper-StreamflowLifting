@@ -2,7 +2,7 @@
 
 - `code`: R code, directory path 바꿔야, 보안 문제로 구글 API 키 삭제.
 
-- `data`: Geum-River dataset, shape 파일 (`River` 폴더 안에 있음)
+- `data`: Geum-River dataset, shape 파일 (`River` 폴더 안에 있음) (혹시 모를 저작권 문제를 고려해 삭제)
 
 - `result_RDS`: 시뮬레이션 result, 100번 iteration한 것을 `.RDS` 파일로 저장
 
