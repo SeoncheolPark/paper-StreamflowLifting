@@ -6,7 +6,7 @@
 
 	+ Data are gathered from the [Water Environment Information System](http://211.114.21.35/KRF_DEV/), operated by Ministry of Environment, South Korea.
 
-	+ Geum-River network can be obtained in [Korean Reach File] in the Wter Information System, operated by National Institute of Environmental Research, South Korea.
+	+ Geum-River network can be obtained in [Korean Reach File](http://water.nier.go.kr/front/riverNetwork/riverNetwork.jsp) in the Wter Information System, operated by National Institute of Environmental Research, South Korea.
 
 - `result_RDS`: 시뮬레이션 result, 100번 iteration한 것을 `.RDS` 파일로 저장
 
