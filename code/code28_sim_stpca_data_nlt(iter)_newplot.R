@@ -294,14 +294,14 @@ for(iii in c(1,6,8,9,10,11)){
     draw.circle(x=mean(location_imsi[upper_seg_list[[iii]],1]), y=mean(location_imsi[upper_seg_list[[iii]],2]), radius=0.25, border="red" )
   }
 }
-legend("topleft", pch=c(15,16), col=c("purple", "orange"), c("Upper-most", "Non-upper-most"), bty="n")
+legend("topleft", pch=c(15,16), col=c("purple", "orange"), c("Most upstream", "Non-most upstream"), bty="n")
 
 unique_upper_seg_label <- unique(upper_seg_label)
 rainbow_palette <- rainbow(length(unique_upper_seg_label))
 plot(TweedPredPoints$Longitude, TweedPredPoints$Latitude ,col=rainbow_palette[match(upper_seg_label[TweedPredPoints$StreamUnit], unique_upper_seg_label)], pch=16, cex=TweedPredPoints$Weights, xlab="n", ylab="n", xaxt="n", yaxt="n", main="(d)")
 points(location_imsi[-upper_seg,1], location_imsi[-upper_seg,2], pch=21, bg="orange", col="black")
 points(location_imsi[upper_seg,1], location_imsi[upper_seg,2], pch=22, bg="purple", col="black")
-legend("topleft", pch=c(15,16), col=c("purple", "orange"), c("Upper-most", "Non-upper-most"), bty="n")
+legend("topleft", pch=c(15,16), col=c("purple", "orange"), c("Most upstream", "Non-most upstream"), bty="n")
 
 
 
