@@ -287,7 +287,8 @@ quilt.plot(example_network@obspoints@SSNPoints[[1]]@point.coords[,1], example_ne
 ########################################
 #(추가: 만약 연도별로 할 것이면...)
 #TweedData <- TweedData[which(year(TweedData$date)=="2012"),]
-source('~/Dropbox/(논문들)/(논문)RIver Network/Extremes on River Network/Flexible regression models over river networks(2014)_code/Me/source_Flexible.R', chdir = TRUE)
+#source('~/Dropbox/(논문들)/(논문)RIver Network/Extremes on River Network/Flexible regression models over river networks(2014)_code/Me/source_Flexible.R', chdir = TRUE)
+source('~/Dropbox/R files/StreamFLow/sources/source_Flexible.R', chdir = TRUE)
 penalties_default <- c(50, 50, c(25, 5), 50, c(25, 5), c(25, 25))
 division_factor <- c(30, 25, 20, 15, 10, 5, 1, 0.5, 0.25, 0.125)
 AICc_vec <- rep(0, length(division_factor))

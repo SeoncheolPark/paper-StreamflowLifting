@@ -19,8 +19,8 @@ source('~/Dropbox/R files/StreamFlow/sources/source.R', chdir = TRUE)
 source('~/Dropbox/R files/StreamFlow/sources/source_S.R', chdir = TRUE)
 source('~/Dropbox/R files/StreamFlow/sources/source_S_nlt.R', chdir = TRUE)
 
-source('~/Dropbox/(논문들)/(논문)RIver Network/Extremes on River Network/Flexible regression models over river networks(2014)_code/Me/source_Flexible.R', chdir = TRUE)
-
+#source('~/Dropbox/(논문들)/(논문)RIver Network/Extremes on River Network/Flexible regression models over river networks(2014)_code/Me/source_Flexible.R', chdir = TRUE)
+source('~/Dropbox/R files/StreamFLow/sources/source_Flexible.R', chdir = TRUE)
 ########################################
 #stpca package vignette
 ########################################
