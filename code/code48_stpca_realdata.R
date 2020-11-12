@@ -389,12 +389,12 @@ for(ijk in 1:n.iter){
   TweedData <- TweedData[order(TweedData$location),]
   #(Oct 31, 2020): TweedData 추가작업
   TweedData2 <- TweedData
-  TweedData2[1,c(3:5)] <- colMeans(TweedData2[c(1:2),c(3:5)])
-  TweedData2[11,c(3:5)] <- colMeans(TweedData2[c(11:12),c(3:5)])
-  TweedData2[14,c(3:5)] <- colMeans(TweedData2[c(14:15),c(3:5)])
-  TweedData2[16,c(3:5)] <- colMeans(TweedData2[c(16:17),c(3:5)])
-  TweedData2[19,c(3:5)] <- colMeans(TweedData2[c(19:20),c(3:5)])
-  TweedData2[25,c(3:5)] <- colMeans(TweedData2[c(25:26),c(3:5)])
+  TweedData2[1,c(3:5)] <- colMeans(TweedData[c(1:2),c(3:5)])
+  TweedData2[11,c(3:5)] <- colMeans(TweedData[c(11:12),c(3:5)])
+  TweedData2[14,c(3:5)] <- colMeans(TweedData[c(14:15),c(3:5)])
+  TweedData2[16,c(3:5)] <- colMeans(TweedData[c(16:17),c(3:5)])
+  TweedData2[19,c(3:5)] <- colMeans(TweedData[c(19:20),c(3:5)])
+  TweedData2[25,c(3:5)] <- colMeans(TweedData[c(25:26),c(3:5)])
   TweedData2 <- TweedData2[-c(2,12,15,17,20,26),]
   
  index_choose <- sort(as.numeric(paste(sort(unique(demoNet@obspoints@SSNPoints[[1]]@point.data$rid)))))
@@ -670,12 +670,12 @@ for(ijk in 1:n.iter){
 #saveRDS(result_mat, "StreamSTPCA40(sd05).RDS")
 
 #saveRDS(result_mat, "StreamSTPCA40(sd1)nlt.RDS")
-saveRDS(result_list, "RealListStreamSTPCA40(sd2)nlt.RDS")
+saveRDS(result_list, "RealListStreamSTPCA30(sd2)nlt.RDS")
 
 #evaluation
-aaaa <- readRDS("~/Dropbox/Github/paper-StreamflowLifting/result_RDS/RealListStreamSTPCA40(sd1)nlt.RDS")
-#aaaa <- readRDS("~/Dropbox/Github/paper-StreamflowLifting/result_RDS/RealListStreamSTPCA40(sd15)nlt.RDS")
-#aaaa <- readRDS("~/Dropbox/Github/paper-StreamflowLifting/result_RDS/RealListStreamSTPCA40(sd2)nlt.RDS")
+#aaaa <- readRDS("~/Dropbox/Github/paper-StreamflowLifting/result_RDS/RealListStreamSTPCA30(sd1)nlt.RDS")
+#aaaa <- readRDS("~/Dropbox/Github/paper-StreamflowLifting/result_RDS/RealListStreamSTPCA30(sd15)nlt.RDS")
+aaaa <- readRDS("~/Dropbox/Github/paper-StreamflowLifting/result_RDS/RealListStreamSTPCA30(sd2)nlt.RDS")
 bbbb <- array(as.numeric(unlist(aaaa)), dim=c(4,5,100))
 mean(bbbb[1,2,]*(sqrt(80/30)))
 mean(bbbb[2,2,]*(sqrt(80/30)))
