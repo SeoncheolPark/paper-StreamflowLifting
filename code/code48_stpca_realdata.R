@@ -673,16 +673,18 @@ for(ijk in 1:n.iter){
 saveRDS(result_list, "RealListStreamSTPCA40(sd2)nlt.RDS")
 
 #evaluation
-#aaaa <- readRDS("~/Dropbox/R files/RealListStreamSTPCA40(sd1)nlt.RDS")
-#bbbb <- array(as.numeric(unlist(aaaa)), dim=c(4,5,100))
-#mean(bbbb[1,2,])
-#mean(bbbb[2,2,])
-#mean(bbbb[3,2,])
-#mean(bbbb[4,2,])
-#sd(bbbb[1,2,])
-#sd(bbbb[2,2,])
-#sd(bbbb[3,2,])
-#sd(bbbb[4,2,])
+aaaa <- readRDS("~/Dropbox/Github/paper-StreamflowLifting/result_RDS/RealListStreamSTPCA40(sd1)nlt.RDS")
+#aaaa <- readRDS("~/Dropbox/Github/paper-StreamflowLifting/result_RDS/RealListStreamSTPCA40(sd15)nlt.RDS")
+#aaaa <- readRDS("~/Dropbox/Github/paper-StreamflowLifting/result_RDS/RealListStreamSTPCA40(sd2)nlt.RDS")
+bbbb <- array(as.numeric(unlist(aaaa)), dim=c(4,5,100))
+mean(bbbb[1,2,]*(sqrt(80/30)))
+mean(bbbb[2,2,]*(sqrt(80/30)))
+mean(bbbb[3,2,]*(sqrt(80/30)))
+mean(bbbb[4,2,]*(sqrt(80/30)))
+sd(bbbb[1,2,]*(sqrt(80/30)))
+sd(bbbb[2,2,]*(sqrt(80/30)))
+sd(bbbb[3,2,]*(sqrt(80/30)))
+sd(bbbb[4,2,]*(sqrt(80/30)))
 
 
 
