@@ -6,12 +6,19 @@ library(nlt)
 library(foreach)
 library(parallel) #for detect cores
 library(doParallel)
+library(sjmisc)
 #function (input, f, LocalPred = LinearPred, neighbours = 1, intercept = TRUE, 
 #         closest = FALSE, nkeep = 2, initboundhandl = "reflect", mod = sample(1:length(input), 
 #                                                                               (length(input) - nkeep), FALSE), do.W = FALSE, varonly = FALSE) 
   
 
-
+#data=data[index_sub]; example_network=example_network2; J=10; endpt=68
+#adjacency=adjacency_old
+#pred = streamPred_S; neigh = 1; int = TRUE; clo = FALSE; keep = 2; rule = "median"
+#sd.scale=1; returnall = FALSE; plot.fig = FALSE; plot.individual = FALSE
+#pollutant=NULL; polluyear=NULL; plot.thesis=FALSE; do.parallel=TRUE
+#verbose=TRUE; ga=FALSE; index_sub_data=index_sub_data_new
+#oremovelist=result_forward$removelist; max.subnum=5
 
 nlt_Stream_S <- function(data, example_network, J=10, endpt=NULL, adjacency=adjacency_old, realweights, TweedData, TweedPredPoints, pred = streamPred_S, neigh = 1, int = TRUE, clo = FALSE, keep = 2, rule = "median", sd.scale=1, returnall = FALSE, plot.fig = FALSE, plot.individual = FALSE, pollutant=NULL, polluyear=NULL, plot.thesis=FALSE, do.parallel=TRUE, verbose=TRUE, ga=FALSE, index_sub_data=NULL, oremovelist=NULL, max.subnum=5){
   #max.subnum: ???
@@ -20,6 +27,7 @@ nlt_Stream_S <- function(data, example_network, J=10, endpt=NULL, adjacency=adja
   deni <- df <- NULL
   aveghat <- matrix(0, 1, n)
   ghatnat <- NULL
+  adjacency2 <- as.data.frame(as.matrix(adjacency_old$adjacency))
   if(is.null(endpt)){
     #stop("You should put endpoint (or endsegment) index")
     endpt <- which(example_network@obspoints@SSNPoints[[1]]@point.data$rid==which(adjacency$rid_bid[,2]=="1"))
@@ -31,21 +39,24 @@ nlt_Stream_S <- function(data, example_network, J=10, endpt=NULL, adjacency=adja
       }
       if(ga==FALSE){
         v <- sample(setdiff(c(1:n), endpt), (n - keep), FALSE)
-        vec[i, ] <- as.row(v)
+        vec[ii, ] <- as.row(v)
       }else if(ga==TRUE & !is.null(index_sub_data) & !is.null(oremovelist)){
         subnum <- 0
         vc <- oremovelist
         index.candidate <- sort(setdiff(oremovelist, endpt))
         while(TRUE){
           sc <- sample(index.candidate, 2, FALSE)
-          if(index_sub_data[sc[1],2]==index_sub_data[sc[2],2]){
+          #(추가 20 Nov, 2020)
+          #if( (index_sub_data[sc[1],2]==index_sub_data[sc[2],2]) & abs(data[sc[1]]-data[sc[2]])<0.25  ){
+          #if( (index_sub_data[sc[1],2]==index_sub_data[sc[2],2]) &  (adjacency2[as.numeric(paste(names(data)))[sc[1]], as.numeric(paste(names(data)))[sc[2]]]==1 | adjacency2[as.numeric(paste(names(data)))[sc[2]], as.numeric(paste(names(data)))[sc[1]]]==1) ){
+          if( (index_sub_data[sc[1],2]==index_sub_data[sc[2],2])){
             #exchange
             subnum <- subnum + 1
             change.index <- c(which(vc==sc[1]), which(vc==sc[2]))
             vc <- replace(vc, change.index, vc[c(change.index[2], change.index[1])])
             index.candidate <- setdiff(index.candidate, sc)
           }
-          if(subnum>=5){
+          if(subnum>=max.subnum){
             break
           }
         }
@@ -61,11 +72,11 @@ nlt_Stream_S <- function(data, example_network, J=10, endpt=NULL, adjacency=adja
 
   }else{
     #make clusters
-    cl <- parallel::makeCluster(detectCores()-1)
+    cl <- parallel::makeCluster(detectCores()-1, setup_strategy = "sequential")
     doParallel::registerDoParallel(cl)
     #parallelized
     aveghat <- c()    
-    aveghat <- foreach(ii=1:J, .combine=rbind, .export=c('denoise_Stream_S_perm', 'fwtnp_Stream_S_perm', 'as.row', 'initS_stream', 'compute_shreve_weighted', 'getnbrs_fast', 'adjacency_old', 'getnbrs_S_removept', 'initS_stream_removept', 'as.column', 'PointsUpdate_S', 'artlev', 'ebayesthresh', 'invtnp_stream_S', 'getnbrs_S_removept_inv', 'streamPred_S', 'UndoPointsUpdate_S', 'getweights_internal', 'getnbrs_fast_internal')) %dopar% {
+    aveghat <- foreach(ii=1:J, .combine=rbind, .export=c('denoise_Stream_S_perm', 'fwtnp_Stream_S_perm', 'as.row', 'initS_stream', 'compute_shreve_weighted', 'getnbrs_fast', 'adjacency_old', 'getnbrs_S_removept', 'initS_stream_removept', 'as.column', 'PointsUpdate_S', 'artlev', 'ebayesthresh', 'invtnp_stream_S', 'getnbrs_S_removept_inv', 'streamPred_S', 'UndoPointsUpdate_S', 'getweights_internal', 'getnbrs_fast_internal', 'str_contains')) %dopar% {
       if(verbose){
         cat(ii, "...\n")
       }
@@ -79,16 +90,19 @@ nlt_Stream_S <- function(data, example_network, J=10, endpt=NULL, adjacency=adja
         vc <- oremovelist
         index.candidate <- sort(setdiff(oremovelist, endpt))
         while(TRUE){
+          if(subnum>=max.subnum){
+            break
+          }
           sc <- sample(index.candidate, 2, FALSE)
-          if(index_sub_data[sc[1],2]==index_sub_data[sc[2],2]){
+          #(추가 20 Nov, 2020)
+          #if( (index_sub_data[sc[1],2]==index_sub_data[sc[2],2]) & abs(data[sc[1]]-data[sc[2]])<0.25){
+          if( (index_sub_data[sc[1],2]==index_sub_data[sc[2],2]) ){
+          #if( (index_sub_data[sc[1],2]==index_sub_data[sc[2],2]) & (adjacency2[as.numeric(paste(names(data)))[sc[1]], as.numeric(paste(names(data)))[sc[2]]]==1 | adjacency2[as.numeric(paste(names(data)))[sc[2]], as.numeric(paste(names(data)))[sc[1]]]==1)  ){
             #exchange
             subnum <- subnum + 1
             change.index <- c(which(vc==sc[1]), which(vc==sc[2]))
             vc <- replace(vc, change.index, vc[c(change.index[2], change.index[1])])
             index.candidate <- setdiff(index.candidate, sc)
-          }
-          if(subnum>=max.subnum){
-            break
           }
         }
         v <- vc
@@ -489,7 +503,7 @@ fwtnp_Stream_S_perm <- function(data, example_network, endpt=NULL, mod=NULL, adj
     W <- NULL
   }
   N <- length(pointsin)
-  saveRDS(mod, "mod.RDS")
+  #saveRDS(mod, "mod.RDS")
   return(list(x = input, coeff = coeff, lengths = lengths, 
               lengthsremove = lengthsremove, pointsin = pointsin, removelist = removelist, 
               neighbrs = neighbrs, schemehist = schemehist, interhist = interhist, 
