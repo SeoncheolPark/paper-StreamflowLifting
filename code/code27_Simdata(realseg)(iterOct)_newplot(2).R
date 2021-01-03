@@ -192,6 +192,8 @@ for(i in 1:nrow(example_network@obspoints@SSNPoints[[1]]@point.coords)){
 #eventplace2 <- eventplace2[match(example_network@obspoints@SSNPoints[[1]]@point.data$X, eventplace2$ID), ]
 #code_Flexible_me.R의 내용 가져옴
 data$normaldata_TN <- data$normaldata_TN[,match(example_network@obspoints@SSNPoints[[1]]@point.data$X, colnames(data$normaldata_TN))]
+data$normaldata_TOC <- data$normaldata_TOC[,match(example_network@obspoints@SSNPoints[[1]]@point.data$X, colnames(data$normaldata_TOC))]
+
 eventplace2 <- eventplace2[match(example_network@obspoints@SSNPoints[[1]]@point.data$X, eventplace2$ID), ]
 ########################################
 #이제부터는 flexible smoothing
@@ -244,7 +246,7 @@ upper_seg_label[upper_seg_list[[15]]] <- "H"; upper_seg_label[upper_seg_list[[16
 #label 다시 매기기
 upper_seg_label <- rep("A", 113)
 upper_seg_label[c(1,2,3,4,5,6,112)] <- "B"
-upper_seg_label[c(28,29,30,37,38,39,40,41,42,43,44,45,49)] <- "C"
+upper_seg_label[c(28,29,30,37,38,39,40,41,42,43,44,45,47,48,49)] <- "C"
 upper_seg_label[c(20,21,22,23,24,87,111)] <- "D"
 upper_seg_label[c(33,34,35,36,85)] <- "E"
 upper_seg_label[c(58,61,62,83,102,103,104,105,106,107,108,109,110)] <- "F"
@@ -346,6 +348,7 @@ points(location_imsi[upper_seg,1], location_imsi[upper_seg,2], pch=22, bg="purpl
 legend("topleft", pch=c(15,16), col=c("purple", "orange"), c("Most upstream", "Non-most upstream"), bty="n")
 
 
+
 add_catchment <- FALSE
 if(add_catchment==TRUE){
   library(maptools)
@@ -398,6 +401,129 @@ if(add_catchment==TRUE){
   legend("topleft", pch=c(15,16), col=c("purple", "orange"), c("Most upstream", "Non-most upstream"), bty="n")
   
 }
+
+
+
+
+add_catchment <- TRUE
+if(add_catchment==TRUE){
+  
+  
+  data_imsi <- readRDS("~/Dropbox/R files/StreamFLow/data/TOCdata.RDS")
+  data_imsi <- readRDS("~/Dropbox/Data/RIverFlow/금강/Geum(miho)(extended).RDS")
+  data_imsi$normaldata_TOC <- data_imsi$normaldata_TOC["2011-12/2017-11",]
+
+  data_imsi$normaldata_TOC <- data_imsi$normaldata_TOC[,match(example_network@obspoints@SSNPoints[[1]]@point.data$X, colnames(data_imsi$normaldata_TOC))]
+  
+  #(추가) TP 자료에 대해서는 data$normaldata_TP==0인 자료 1개를 제거해야
+  #나중에 로그변환을 취했을 때 에러가 나지 않는다
+  for(ii in 1:ncol(data_imsi$normaldata_TOC)){
+    if(length(which(data_imsi$normaldata_TOC[,ii]==0))!=0){
+      data_imsi$normaldata_TOC[which(data_imsi$normaldata_TOC[,ii]==0),ii] <- NA
+    }
+  }
+  normaldata_TOC <- data_imsi$normaldata_TOC
+  data_imsi2 <- log(apply(as.matrix(data_imsi$normaldata_TOC["2011-12/2017-11"]), 2, mean, na.rm=T))
+  data_imsi2 <- apply(as.matrix(data_imsi$normaldata_TOC["2011-12/2017-11"]), 2, mean, na.rm=T)
+  
+  #quilt.plot(x=example_network@obspoints@SSNPoints[[1]]@point.coords[,1],
+  #           y=example_network@obspoints@SSNPoints[[1]]@point.coords[,2],
+  #           z=data_imsi2)
+  
+  library(maptools)
+  shape_catchment <- readShapePoly("~/Dropbox/Maps/RIverFlow/KRF_3.0_Geumgang/KRF_ver3_CATCHMENT_금강수계.shp")
+  Geum_catchment <- subset(shape_catchment, substr(shape_catchment@data$CAT_ID, start=1, stop=2)=="30")
+  #plot(Geum_catchment)
+  
+  Geum.id <- substr(Geum_catchment@data$CAT_ID, start=1, stop=4)
+  Geum.miho.id <- substr(Geum_catchment@data$CAT_ID, start=1, stop=6)
+  #Geum.miho.id 
+  #maptools 패키지의 unionSpatialPolygons함수를 이용해 중권역으로 정리
+  
+  Geum_middle_catchment <- unionSpatialPolygons(Geum_catchment, Geum.id)
+  #plot(Geum_middle_catchment)
+  Geum_large_catchment <- unionSpatialPolygons(Geum_catchment, Geum.miho.id)
+  #plot(Geum_large_catchment)
+  Geum_middle_Miho_catchment <- unionSpatialPolygons(subset(Geum_catchment, Geum.id=="3011"), Geum.id[which(Geum.id=="3011")])
+  
+  Geum_large_Miho_catchment <- unionSpatialPolygons(subset(Geum_catchment, substr(Geum.miho.id, start=1, stop=4)=="3011"), Geum.miho.id[which(substr(Geum.miho.id, start=1, stop=4)=="3011")])
+  
+  par(family = 'sans') 
+  par(mar=c(2.1,1.1,3.1,1.1))
+  #par(mar=c(1.1,1.1,2.1,1.1))
+  par(mfrow=c(1,2))
+  plot(TweedPredPoints$Longitude, TweedPredPoints$Latitude ,col="gray", pch=16, cex=TweedPredPoints$Weights, xlab="n", ylab="n", xaxt="n", yaxt="n", main="(a)")
+  plot(Geum_large_Miho_catchment, lty=2, border="darkgreen", add=T)
+  points(location_imsi[-upper_seg,1], location_imsi[-upper_seg,2], pch=21, bg="orange", col="black")
+  points(location_imsi[upper_seg,1], location_imsi[upper_seg,2], pch=22, bg="purple", col="black")
+  #quilt.plot(location_imsi[,1], location_imsi[,2], colMeans(result_signal), cex=2, add=T, zlim=range(c(data, colMeans(result_signal)))+c(-0.5,0.5), xlab="x", ylab="y")
+  library(mixtools)
+  for(iii in c(1,2,3,4,5,6,8,9)){
+    ellipse(mu=c(mean(location_imsi[upper_seg_list[[iii]],1]), mean(location_imsi[upper_seg_list[[iii]],2])), sigma=var(location_imsi[upper_seg_list[[iii]],])/1.5, npoints=200, newplot=FALSE, col="red")
+  }
+  library(plotrix)
+  for(iii in c(7, 10:17)){
+    if(iii==7){
+      draw.circle(x=mean(location_imsi[upper_seg_list[[iii]],1]), y=mean(location_imsi[upper_seg_list[[iii]],2]), radius=0.02, border="red" )
+    }else{
+      draw.circle(x=mean(location_imsi[upper_seg_list[[iii]],1]), y=mean(location_imsi[upper_seg_list[[iii]],2]), radius=0.01, border="red" )
+    }
+  }
+  legend("topleft", pch=c(15,16), col=c("purple", "orange"), c("Most upstream", "Non-most upstream"), bty="n")
+  
+  #unique_upper_seg_label <- unique(upper_seg_label)
+  #rainbow_palette <- rainbow(length(unique_upper_seg_label))
+  #plot(TweedPredPoints$Longitude, TweedPredPoints$Latitude ,col=rainbow_palette[match(upper_seg_label[TweedPredPoints$StreamUnit], unique_upper_seg_label)], pch=16, cex=TweedPredPoints$Weights, xlab="n", ylab="n", xaxt="n", yaxt="n", main="(b)")
+  #points(location_imsi[-upper_seg,1], location_imsi[-upper_seg,2], pch=21, bg="orange", col="black")
+  #points(location_imsi[upper_seg,1], location_imsi[upper_seg,2], pch=22, bg="purple", col="black")
+  #legend("topleft", pch=c(15,16), col=c("purple", "orange"), c("Most upstream", "Non-most upstream"), bty="n")
+  
+  index_sub_data <- substr(example_network@obspoints@SSNPoints[[1]]@point.data$RCH_ID, start=1, stop=6)
+  unique_index_sub_data <- unique(index_sub_data)
+  
+  for(iii in 1:length(unique_index_sub_data)){
+    #Geum_large_Miho_catchment@polygons[[1]]@ID==unique_index_sub_data[iii]
+    
+   # as.numeric(paste(substr(unique_index_sub_data[iii],start=5, stop=6)))
+    coord_imsi <- colMedians(Geum_large_Miho_catchment@polygons[[as.numeric(paste(substr(unique_index_sub_data[iii],start=5, stop=6)))]]@Polygons[[1]]@coords)
+    
+    text(x=coord_imsi[1], y=coord_imsi[2],
+         labels=iii, font=2, cex=1.5)
+  }
+  
+  
+  upper_seg_data_list <- list()
+  for(iii in 1:length(upper_seg_list)){
+    upper_seg_data_list[[iii]] <- data_imsi2[which(as.numeric(paste(example_network@obspoints@SSNPoints[[1]]@point.data$rid))%in%upper_seg_list[[iii]])]
+  }
+  upper_seg_data_list2 <- list()
+  upper_seg_data_list2[[1]] <- data_imsi2[which(as.numeric(paste(example_network@obspoints@SSNPoints[[1]]@point.data$rid))%in%which(upper_seg_label=="A"))]
+  upper_seg_data_list2[[2]] <- data_imsi2[which(as.numeric(paste(example_network@obspoints@SSNPoints[[1]]@point.data$rid))%in%which(upper_seg_label=="B"))]
+  upper_seg_data_list2[[3]] <- data_imsi2[which(as.numeric(paste(example_network@obspoints@SSNPoints[[1]]@point.data$rid))%in%which(upper_seg_label=="C"))]
+  upper_seg_data_list2[[4]] <- data_imsi2[which(as.numeric(paste(example_network@obspoints@SSNPoints[[1]]@point.data$rid))%in%which(upper_seg_label=="D"))]
+  upper_seg_data_list2[[5]] <- data_imsi2[which(as.numeric(paste(example_network@obspoints@SSNPoints[[1]]@point.data$rid))%in%which(upper_seg_label=="E"))]
+  upper_seg_data_list2[[6]] <- data_imsi2[which(as.numeric(paste(example_network@obspoints@SSNPoints[[1]]@point.data$rid))%in%which(upper_seg_label=="F"))]
+  upper_seg_data_list2[[7]] <- data_imsi2[which(as.numeric(paste(example_network@obspoints@SSNPoints[[1]]@point.data$rid))%in%which(upper_seg_label=="G"))]
+  upper_seg_data_list2[[8]] <- data_imsi2[which(as.numeric(paste(example_network@obspoints@SSNPoints[[1]]@point.data$rid))%in%which(upper_seg_label=="H"))]
+  upper_seg_data_list2[[9]] <- data_imsi2[which(as.numeric(paste(example_network@obspoints@SSNPoints[[1]]@point.data$rid))%in%which(upper_seg_label=="I"))]
+  upper_seg_data_list2[[10]] <- data_imsi2[which(as.numeric(paste(example_network@obspoints@SSNPoints[[1]]@point.data$rid))%in%which(upper_seg_label=="J"))]
+  
+  
+  upper_seg_data_list3 <- list()
+  for(iii in 1:length(unique(index_sub_data))){
+    upper_seg_data_list3[[iii]] <- data_imsi2[which(substr(example_network@obspoints@SSNPoints[[1]]@point.data$RCH_ID, start=1, stop=6)==unique(substr(example_network@obspoints@SSNPoints[[1]]@point.data$RCH_ID, start=1, stop=6))[iii])]
+  }
+  
+  #par(mar=c(5.1, 4.1, 4.1, 2.1)/2)
+  #par(mfrow=c(1,1))
+  par(cex.axis=0.75) # is for x-axis
+  boxplot(upper_seg_data_list3, cex.lab=1, main="(b)")
+}
+
+
+
+
+#################
 
 #4 5 6
 #7 8 14 15 16 25 26 31 32
@@ -457,9 +583,9 @@ example_network3@obspoints@SSNPoints[[1]]@network.point.coords <-  example_netwo
 #TweedPredPoints <- TweedPredPoints_old
 n.seg <- 113
 #n.sub.length <- 59
-n.sub.length <- 40
+n.sub.length <- 113
 n.sub.length.true <- 28
-sd.val <- 2
+sd.val <- 1
 
 
 #adjacency_old 작성
@@ -618,6 +744,7 @@ for(ijk in 1:n.iter){
   penalties_default <- c(50, 50, c(25, 5), 50, c(25, 5), c(25, 25))
   division_factor <- c(30, 25, 20, 15, 10, 5, 1, 0.5, 0.25, 0.125)
   AICc_vec <- rep(0, length(division_factor))
+  start_time1 <- Sys.time()
   for(jjj in 1:length(division_factor)){
     result_a <- smnet_ST(realweights, adjacency, TweedData, TweedPredPoints, penalties=penalties_default/division_factor[jjj], plot.fig=FALSE, station=NULL, use.optim=FALSE, log.y=FALSE, model.type = c("c", "m"))
     AICc_vec[jjj] <- result_a$AICc
@@ -649,6 +776,7 @@ for(ijk in 1:n.iter){
   #opt_result <- optim(par=penalties_default/25, fn=smnet_ST, realweights=realweights, adjacency=adjacency, TweedData=TweedData, TweedPredPoints=TweedPredPoints, method="L-BFGS-B", lower=penalties_default/30, upper=penalties_default/20, log.y=FALSE,model.type = c("c", "m"))
   #result_a <- smnet_ST(realweights, adjacency, TweedData, TweedPredPoints, penalties= opt_result$par, plot.fig=FALSE, station=NULL, use.optim=FALSE, log.y=FALSE,model.type = c("c", "m") )
   result_a <- smnet_ST(realweights, adjacency, TweedData, TweedPredPoints, penalties= opt_result$par, plot.fig=FALSE, station=NULL, use.optim=FALSE, log.y=FALSE,model.type = c("c", "m") )
+  end_time1 <- Sys.time()
   unique(result_a$fit)
   sapply(split(result_a$fit, f=result_a$TweedData$location), function(x) median(x)) #mean으로 바꿔도 결과 같다
   
@@ -662,8 +790,12 @@ for(ijk in 1:n.iter){
   example_network2@obspoints@SSNPoints[[1]]@point.data <- example_network3@obspoints@SSNPoints[[1]]@point.data[index_sub,]
   
   #(2) stream-flow lifting
+  start_time2 <- Sys.time()
   result_denoise <- denoise_S(data[index_sub], example_network2, adjacency=adjacency_old, realweights, TweedData, TweedPredPoints, pred = streamPred_S, neigh = 1, int = TRUE, clo = FALSE, keep = 2, rule = "median", returnall = FALSE)
+  end_time2 <- Sys.time()
+  start_time3 <- Sys.time()
   result_denoise2 <- denoise_S(data[index_sub], example_network2, adjacency=adjacency_old, realweights, TweedData, TweedPredPoints, pred = streamPred_S, neigh = 1, int = TRUE, clo = FALSE, keep = 2, rule = "hard", returnall = FALSE)
+  end_time3 <- Sys.time()
   
   result_forward <- fwtnp_stream_S(data[index_sub], example_network2, adjacency=adjacency_old, realweights, TweedData, TweedPredPoints, nkeep = 2, intercept = TRUE, initboundhandl = "reflect",  neighbours = 1, closest = FALSE, LocalPred = streamPred_S, do.W = FALSE, varonly = FALSE)
   
@@ -673,7 +805,9 @@ for(ijk in 1:n.iter){
   
   #denoise_Stream_S_perm(data, example_network2, endpt=1, per=NULL, adjacency=adjacency_old, realweights, TweedData, TweedPredPoints, pred = streamPred_S, neigh = 1, int = TRUE, clo = FALSE, keep = 2, rule = "median", sd.scale=1, returnall = FALSE, plot.fig = FALSE, plot.individual = FALSE, pollutant=NULL, polluyear=NULL, plot.thesis=FALSE)
   #result_denoise3 <- nlt_Stream_S(data, example_network2, J=10, endpt=1, adjacency=adjacency_old, realweights, TweedData, TweedPredPoints, pred = streamPred_S, neigh = 1, int = TRUE, clo = FALSE, keep = 2, rule = "median", sd.scale=1, returnall = TRUE)$aveghat
+  start_time4 <- Sys.time()
   result_denoise3 <- nlt_Stream_S(data[index_sub], example_network2, J=10, endpt=68, adjacency=adjacency_old, realweights, TweedData, TweedPredPoints, pred = streamPred_S, neigh = 1, int = TRUE, clo = FALSE, keep = 2, rule = "median", sd.scale=1, returnall = TRUE, ga=TRUE, index_sub_data=index_sub_data_new, oremovelist=result_forward$removelist)$aveghat
+  end_time4 <- Sys.time()
   
   stopCluster(cl)
   
@@ -699,9 +833,9 @@ for(ijk in 1:n.iter){
   #plot(TweedPredPoints$Longitude, TweedPredPoints$Latitude ,col="gray", pch=16, cex=TweedPredPoints$Weights, main="(b) Observed", xlab="n", ylab="n", xaxt="n", yaxt="n")
   #quilt.plot(location_imsi[index_sub,1], location_imsi[index_sub,2], TweedData$nitrate, cex=2, add=T, zlim=range(c(data, colMeans(result_signal)))+c(-0.5,0.5), xlab="x", ylab="y")
 
-  result_new_mat <- matrix(0, nrow=4, ncol=5)
+  result_new_mat <- matrix(0, nrow=4, ncol=6)
   rownames(result_new_mat) <- c( "ODonnell", "S-Lifting(M)",  "S-Lifting(H)", "S-Lifting(N)")
-  colnames(result_new_mat) <- c("Corr", "RMSE(whole)","WRMSE(whole)", "RMSE(actual)", "WRMSE(actual)")
+  colnames(result_new_mat) <- c("Corr", "RMSE(whole)","WRMSE(whole)", "RMSE(actual)", "WRMSE(actual)", "ElapsedTime")
   
   if(length(index_sub)==113){
     #예측 단계 불필요
@@ -745,6 +879,11 @@ for(ijk in 1:n.iter){
     result_new_mat[2,3] = result_new_mat[2,5] <- sqrt(sum(realweights*(colMeans(result_signal)[index_choose]-as.numeric(result_denoise))^2)/n.seg)
     result_new_mat[3,3] = result_new_mat[3,5] <- sqrt(sum(realweights*(colMeans(result_signal)[index_choose]-as.numeric(result_denoise2))^2)/n.seg)
     result_new_mat[4,3] = result_new_mat[4,5] <- sqrt(sum(realweights*(colMeans(result_signal)[index_choose]-as.numeric(result_denoise3))^2)/n.seg)
+    
+    result_new_mat[1,6] <- as.numeric(end_time1-start_time1, units="secs")
+    result_new_mat[2,6] <- as.numeric(end_time2-start_time2, units="secs")
+    result_new_mat[3,6] <- as.numeric(end_time3-start_time3, units="secs")
+    result_new_mat[4,6] <- as.numeric(end_time4-start_time4, units="secs")
     
     result_new_list <- list()
     result_new_list$data <- data
@@ -825,7 +964,12 @@ for(ijk in 1:n.iter){
     result_new_mat[2,5] <- sqrt(sum(realweights[index_choose]*(colMeans(result_signal)[index_choose]-as.numeric(result_denoise))^2)/length(index_choose))
     result_new_mat[3,5] <- sqrt(sum(realweights[index_choose]*(colMeans(result_signal)[index_choose]-as.numeric(result_denoise2))^2)/length(index_choose))
     result_new_mat[4,5] <- sqrt(sum(realweights[index_choose]*(colMeans(result_signal)[index_choose]-as.numeric(result_denoise3))^2)/length(index_choose))
-  
+    
+    result_new_mat[1,6] <- as.numeric(end_time1-start_time1, units="secs")
+    result_new_mat[2,6] <- as.numeric(end_time2-start_time2, units="secs")
+    result_new_mat[3,6] <- as.numeric(end_time3-start_time3, units="secs")
+    result_new_mat[4,6] <- as.numeric(end_time4-start_time4, units="secs")
+    
     result_new_list <- list()
     result_new_list$data <- data
     result_new_list$result_new_mat <- result_new_mat
@@ -857,10 +1001,10 @@ for(ijk in 1:n.iter){
 #saveRDS(result_mat, "StreamSim115(sd1).RDS")
 #saveRDS(result_mat, "StreamSim80(sd2)nlt.RDS")
 
-saveRDS(result_list, "ListStreamSim113(sd2)nlt_withresidual.RDS")
+saveRDS(result_list, "ListStreamSim113(sd1)nlt_withresidualwithtime.RDS")
 
 #evaluation
-aaaa <- readRDS("~/Dropbox/R files/ListStreamSim40(sd1)nlt.RDS")
+aaaa <- readRDS("~/Dropbox/R files/ListStreamSim80(sd1)nltwithtime.RDS")
 bbbb <- array(as.numeric(unlist(aaaa)), dim=c(4,5,100))
 mean(bbbb[1,2,])
 mean(bbbb[2,2,])

@@ -303,6 +303,51 @@ points(location_imsi[-upper_seg,1], location_imsi[-upper_seg,2], pch=21, bg="ora
 points(location_imsi[upper_seg,1], location_imsi[upper_seg,2], pch=22, bg="purple", col="black")
 legend("topleft", pch=c(15,16), col=c("purple", "orange"), c("Most upstream", "Non-most upstream"), bty="n")
 
+add_catchment <- TRUE
+if(add_catchment==TRUE){
+  par(family = 'sans') 
+  par(mar=c(1.1,1.1,2.1,1.1))
+  par(mfrow=c(1,2))
+  plot(TweedPredPoints$Longitude, TweedPredPoints$Latitude ,col="gray", pch=16, cex=TweedPredPoints$Weights, xlab="n", ylab="n", xaxt="n", yaxt="n", main="(c)")
+  points(location_imsi[-upper_seg,1], location_imsi[-upper_seg,2], pch=21, bg="orange", col="black")
+  points(location_imsi[upper_seg,1], location_imsi[upper_seg,2], pch=22, bg="purple", col="black")
+  library(plotrix)
+  draw.circle(x=example_network@lines[[2]]@Lines[[1]]@coords[2,1], y=example_network@lines[[2]]@Lines[[1]]@coords[2,2], lty=2, border="darkgreen", col="lightgreen", radius=0.2, lwd=1.5)
+  draw.circle(x=example_network@lines[[6]]@Lines[[1]]@coords[2,1], y=example_network@lines[[6]]@Lines[[1]]@coords[2,2], lty=2, border="darkgreen", col="lightgreen", radius=0.2, lwd=1.5)
+  draw.circle(x=example_network@lines[[8]]@Lines[[1]]@coords[2,1], y=example_network@lines[[8]]@Lines[[1]]@coords[2,2], lty=2, border="darkgreen", col="lightgreen", radius=0.2, lwd=1.5)
+  draw.circle(x=example_network@lines[[9]]@Lines[[1]]@coords[2,1], y=example_network@lines[[9]]@Lines[[1]]@coords[2,2], lty=2, border="darkgreen", col="lightgreen", radius=0.2, lwd=1.5)
+  draw.circle(x=example_network@lines[[10]]@Lines[[1]]@coords[2,1], y=example_network@lines[[10]]@Lines[[1]]@coords[2,2], lty=2, border="darkgreen", col="lightgreen", radius=0.2, lwd=1.5)
+  draw.circle(x=example_network@lines[[11]]@Lines[[1]]@coords[2,1], y=example_network@lines[[11]]@Lines[[1]]@coords[2,2], lty=2, border="darkgreen", col="lightgreen", radius=0.2, lwd=1.5)
+  draw.circle(x=example_network@lines[[12]]@Lines[[1]]@coords[2,1], y=example_network@lines[[12]]@Lines[[1]]@coords[2,2], lty=2, border="darkgreen", col="lightgreen", radius=0.2, lwd=1.5)
+  draw.circle(x=example_network@lines[[14]]@Lines[[1]]@coords[2,1], y=example_network@lines[[14]]@Lines[[1]]@coords[2,2], lty=2, border="darkgreen", col="lightgreen", radius=0.2, lwd=1.5)
+  draw.circle(x=example_network@lines[[16]]@Lines[[1]]@coords[2,1], y=example_network@lines[[16]]@Lines[[1]]@coords[2,2], lty=2, border="darkgreen", col="lightgreen", radius=0.2, lwd=1.5)
+  draw.circle(x=example_network@lines[[18]]@Lines[[1]]@coords[2,1], y=example_network@lines[[18]]@Lines[[1]]@coords[2,2], lty=2, border="darkgreen", col="lightgreen", radius=0.2, lwd=1.5)
+  draw.circle(x=example_network@lines[[20]]@Lines[[1]]@coords[2,1], y=example_network@lines[[20]]@Lines[[1]]@coords[2,2], lty=2, border="darkgreen", col="lightgreen", radius=0.2, lwd=1.5)
+  draw.circle(x=example_network@lines[[22]]@Lines[[1]]@coords[2,1], y=example_network@lines[[22]]@Lines[[1]]@coords[2,2], lty=2, border="darkgreen", col="lightgreen", radius=0.2, lwd=1.5)
+  
+  library(mixtools)
+  for(iii in c(2,3,4,5,7)){
+    ellipse(mu=c(mean(location_imsi[upper_seg_list[[iii]],1]), mean(location_imsi[upper_seg_list[[iii]],2])), sigma=var(location_imsi[upper_seg_list[[iii]],])/1.5, npoints=200, newplot=FALSE, col="red")
+  }
+  for(iii in c(1,6,8,9,10,11)){
+    if(iii==1 | iii==6){
+      draw.circle(x=mean(location_imsi[upper_seg_list[[iii]],1]), y=mean(location_imsi[upper_seg_list[[iii]],2]), radius=0.65, border="red" )
+    }else if(iii==11){
+      draw.circle(x=mean(location_imsi[upper_seg_list[[iii]],1]), y=mean(location_imsi[upper_seg_list[[iii]],2]), radius=0.45, border="red" )
+    }else{
+      draw.circle(x=mean(location_imsi[upper_seg_list[[iii]],1]), y=mean(location_imsi[upper_seg_list[[iii]],2]), radius=0.25, border="red" )
+    }
+  }
+  legend("topleft", pch=c(15,16), col=c("purple", "orange"), c("Most upstream", "Non-most upstream"), bty="n")
+  
+  unique_upper_seg_label <- unique(upper_seg_label)
+  rainbow_palette <- rainbow(length(unique_upper_seg_label))
+  plot(TweedPredPoints$Longitude, TweedPredPoints$Latitude ,col=rainbow_palette[match(upper_seg_label[TweedPredPoints$StreamUnit], unique_upper_seg_label)], pch=16, cex=TweedPredPoints$Weights, xlab="n", ylab="n", xaxt="n", yaxt="n", main="(d)")
+  points(location_imsi[-upper_seg,1], location_imsi[-upper_seg,2], pch=21, bg="orange", col="black")
+  points(location_imsi[upper_seg,1], location_imsi[upper_seg,2], pch=22, bg="purple", col="black")
+  legend("topleft", pch=c(15,16), col=c("purple", "orange"), c("Most upstream", "Non-most upstream"), bty="n")
+  
+}
 
 
 ########################################
@@ -310,7 +355,7 @@ legend("topleft", pch=c(15,16), col=c("purple", "orange"), c("Most upstream", "N
 ########################################
 n.seg <- 80
 #n.sub.length <- 80
-n.sub.length <- 40
+n.sub.length <- 80
 sd.val <- 1
 
 
@@ -321,7 +366,7 @@ adjacency <- as.data.frame(as.matrix(adjacency_old$adjacency))
 
 realweights <- as.matrix(weight_vec_candidate, ncol=1)
 
-n.iter <- 1#00
+n.iter <- 100
 #n.iter <- 5
 result_mat <- matrix(0, nrow=n.iter, ncol = 4)
 
@@ -494,6 +539,7 @@ for(ijk in 1:n.iter){
   division_factor <- c(30, 25, 20, 15, 10, 5, 1, 0.5, 0.25, 0.125)
   AICc_vec <- rep(0, length(division_factor))
   #AICc_vec_log <- rep(0, length(division_factor))
+  start_time1 <- Sys.time()
   for(jjj in 1:length(division_factor)){
     result_a <- smnet_ST(realweights, adjacency, TweedData, TweedPredPoints, penalties=penalties_default/division_factor[jjj], plot.fig=FALSE, station=NULL, use.optim=FALSE, log.y=FALSE, model.type = c("c", "m"))
     AICc_vec[jjj] <- result_a$AICc
@@ -538,6 +584,7 @@ for(ijk in 1:n.iter){
   
   #opt_result <- optim(par=penalties_default, fn=smnet_ST, realweights=realweights, adjacency=adjacency, TweedData=TweedData, TweedPredPoints=TweedPredPoints, method="L-BFGS-B", lower=penalties_default/10, upper=penalties_default*2, log.y=FALSE,model.type = c("c", "m"))
   result_a <- smnet_ST(realweights, adjacency, TweedData, TweedPredPoints, penalties= opt_result$par, plot.fig=FALSE, station=NULL, use.optim=FALSE, log.y=FALSE,model.type = c("c", "m") )
+  end_time1 <- Sys.time()
   unique(result_a$fit)
   sapply(split(result_a$fit, f=result_a$TweedData$location), function(x) median(x))
   
@@ -545,21 +592,26 @@ for(ijk in 1:n.iter){
   
   #start_time <- Sys.time()
   
+  start_time2 <- Sys.time()
   result_denoise <- denoise_S(data, example_network2, adjacency=adjacency_old, realweights, TweedData, TweedPredPoints, pred = streamPred_S, neigh = 1, int = TRUE, clo = FALSE, keep = 2, rule = "median", returnall = FALSE)
-  result_denoise2 <- denoise_S(data, example_network2, adjacency=adjacency_old, realweights, TweedData, TweedPredPoints, pred = streamPred_S, neigh = 1, int = TRUE, clo = FALSE, keep = 2, rule = "hard", returnall = FALSE)
+  end_time2 <- Sys.time()
   
+  start_time3 <- Sys.time()
+  result_denoise2 <- denoise_S(data, example_network2, adjacency=adjacency_old, realweights, TweedData, TweedPredPoints, pred = streamPred_S, neigh = 1, int = TRUE, clo = FALSE, keep = 2, rule = "hard", returnall = FALSE)
+  end_time3 <- Sys.time()
   #end_time <- Sys.time()
   
   result_forward <- fwtnp_stream_S(data, example_network2, adjacency=adjacency_old, realweights, TweedData, TweedPredPoints, nkeep = 2, intercept = TRUE, initboundhandl = "reflect",  neighbours = 1, closest = FALSE, LocalPred = streamPred_S, do.W = FALSE, varonly = FALSE)
   
   cores=detectCores()
-  cl <- makeCluster(cores[1]-1) #not to overload your computer
+  cl <- makeCluster(cores[1]-1,  setup_strategy = "sequential") #not to overload your computer
   registerDoParallel(cl)
   
   #denoise_Stream_S_perm(data, example_network2, endpt=1, per=NULL, adjacency=adjacency_old, realweights, TweedData, TweedPredPoints, pred = streamPred_S, neigh = 1, int = TRUE, clo = FALSE, keep = 2, rule = "median", sd.scale=1, returnall = FALSE, plot.fig = FALSE, plot.individual = FALSE, pollutant=NULL, polluyear=NULL, plot.thesis=FALSE)
   #result_denoise3 <- nlt_Stream_S(data, example_network2, J=10, endpt=1, adjacency=adjacency_old, realweights, TweedData, TweedPredPoints, pred = streamPred_S, neigh = 1, int = TRUE, clo = FALSE, keep = 2, rule = "median", sd.scale=1, returnall = TRUE)$aveghat
+  start_time4 <- Sys.time()
   result_denoise3 <- nlt_Stream_S(data, example_network2, J=10, endpt=1, adjacency=adjacency_old, realweights, TweedData, TweedPredPoints, pred = streamPred_S, neigh = 1, int = TRUE, clo = FALSE, keep = 2, rule = "median", sd.scale=1, returnall = TRUE, ga=TRUE, index_sub_data=index_sub_data, oremovelist=result_forward$removelist)$aveghat
-  
+  end_time4 <- Sys.time()
   stopCluster(cl)
   
   #result_forward <- fwtnp_stream_S(data, example_network2, adjacency=adjacency_old, realweights, TweedData, TweedPredPoints, nkeep = 2, intercept = TRUE, initboundhandl = "reflect",  neighbours = 1, closest = FALSE, LocalPred = streamPred_S, do.W = FALSE, varonly = FALSE)
@@ -600,9 +652,9 @@ for(ijk in 1:n.iter){
   #quilt.plot(location_binom[index_choose,1], location_imsi[index_choose,2], TweedData$nitrate, cex=2, add=T, zlim=range(c(data, colMeans(result_signal)))+c(-0.5,0.5), xlab="x", ylab="y")
   #points(location_imsi[index_sub, 1], location_imsi[index_sub, 2], pch=5, cex=2)
   
-  result_new_mat <- matrix(0, nrow=4, ncol=5)
+  result_new_mat <- matrix(0, nrow=4, ncol=6)
   rownames(result_new_mat) <- c( "ODonnell", "S-Lifting(M)",  "S-Lifting(H)", "S-Lifting(N)")
-  colnames(result_new_mat) <- c("Corr", "RMSE(whole)","WRMSE(whole)", "RMSE(actual)", "WRMSE(actual)")
+  colnames(result_new_mat) <- c("Corr", "RMSE(whole)","WRMSE(whole)", "RMSE(actual)", "WRMSE(actual)", "ElapsedTime")
   
   if(length(index_choose)==80){
     #예측 단계 불필요
@@ -649,9 +701,38 @@ for(ijk in 1:n.iter){
     result_new_mat[3,3] = result_new_mat[3,5] <- sqrt(sum(realweights*(colMeans(result_signal)[index_choose]-as.numeric(result_denoise2))^2)/n.observed)
     result_new_mat[4,3] = result_new_mat[4,5] <- sqrt(sum(realweights*(colMeans(result_signal)[index_choose]-as.numeric(result_denoise3))^2)/n.observed)
     
+    result_new_mat[1,6] <- as.numeric(end_time1-start_time1, units="secs")
+    result_new_mat[2,6] <- as.numeric(end_time2-start_time2, units="secs")
+    result_new_mat[3,6] <- as.numeric(end_time3-start_time3, units="secs")
+    result_new_mat[4,6] <- as.numeric(end_time4-start_time4, units="secs")
+    
+    result_new_list <- list()
+    result_new_list$data <- data
+    result_new_list$result_new_mat <- result_new_mat
+    result_new_list$result_signal <- result_signal
+    result_new_list$result_a <- result_a$fit
+    result_new_list$result_denoise <- result_denoise
+    result_new_list$result_denoise2 <- result_denoise2
+    result_new_list$result_denoise3 <- result_denoise3
+    result_new_list$result_a_new <- result_a$fit
+    result_new_list$result_denoise_new <- result_denoise
+    result_new_list$result_denoise2_new <- result_denoise2
+    result_new_list$result_denoise3_new <- result_denoise3
+    result_new_list$result_a_res <- data[index_choose]-result_a$fit
+    result_new_list$result_denoise_res <- data[index_choose]-result_denoise
+    result_new_list$result_denoise_res2 <- data[index_choose]-result_denoise2
+    result_new_list$result_denoise_res3 <- data[index_choose]-result_denoise3
+    result_new_list$result_a_new_res <- data - result_a$fit
+    result_new_list$result_denoise_new_res <- data-result_denoise
+    result_new_list$result_denoise_new_res2 <- data-result_denoise2
+    result_new_list$result_denoise_new_res3 <- data-result_denoise3
+    result_new_list$index_choose <- index_choose
   }else{
     #예측 단계 필요
+    time_init <- Sys.time()
     initS_obj = initS_stream(X=as.row(as.numeric(names(data))), data=as.vector(data), example_network2, adjacency=adjacency_old, realweights, pointsin= matrix(1:length(data), 1, length(data)))
+    time_end <- Sys.time()
+    time_end - time_init
     result_a_new <- initS_obj$weight_matrix%*%as.column(result_a$fit)
     #result_b_new <- initS_obj$weight_matrix%*%as.column(result_b$fit)
     result_denoise_new <- initS_obj$weight_matrix%*%as.column(result_denoise)
@@ -710,14 +791,45 @@ for(ijk in 1:n.iter){
     result_new_mat[2,5] <- sqrt(sum(realweights[index_choose]*(colMeans(result_signal)[index_choose]-result_denoise)^2)/length(index_choose))
     result_new_mat[3,5] <- sqrt(sum(realweights[index_choose]*(colMeans(result_signal)[index_choose]-result_denoise2)^2)/length(index_choose))
     result_new_mat[4,5] <- sqrt(sum(realweights[index_choose]*(colMeans(result_signal)[index_choose]-result_denoise3)^2)/length(index_choose))
+  
+    result_new_mat[1,6] <- as.numeric(end_time1-start_time1, units="secs")
+    result_new_mat[2,6] <- as.numeric(end_time2-start_time2, units="secs")
+    result_new_mat[3,6] <- as.numeric(end_time3-start_time3, units="secs")
+    result_new_mat[4,6] <- as.numeric(end_time4-start_time4, units="secs")
+    
+    result_new_list <- list()
+    result_new_list$data <- data
+    result_new_list$result_new_mat <- result_new_mat
+    result_new_list$result_signal <- result_signal
+    result_new_list$result_a <- result_a$fit
+    result_new_list$result_denoise <- result_denoise
+    result_new_list$result_denoise2 <- result_denoise2
+    result_new_list$result_denoise3 <- result_denoise3
+    result_new_list$result_a_new <- result_a_new
+    result_new_list$result_denoise_new <- result_denoise_new
+    result_new_list$result_denoise2_new <- result_denoise_new2
+    result_new_list$result_denoise3_new <- result_denoise_new3
+    result_new_list$result_a_res <- data[index_choose]-result_a$fit
+    result_new_list$result_denoise_res <- data[index_choose]-result_denoise
+    result_new_list$result_denoise_res2 <- data[index_choose]-result_denoise2
+    result_new_list$result_denoise_res3 <- data[index_choose]-result_denoise3
+    result_new_list$result_a_new_res <- data-result_a_new
+    result_new_list$result_denoise_new_res <- data-result_denoise_new
+    result_new_list$result_denoise_new_res2 <- data-result_denoise_new2
+    result_new_list$result_denoise_new_res3 <- data-result_denoise_new3
+    result_new_list$index_choose <- index_choose
   }
-  result_list[[ijk]] <- result_new_mat
+  
+  ##If we want to analyze it on the quantile level,
+  #result_list[[ijk]] <- result_new_mat
+  result_list[[ijk]] <- result_new_list
 }
 #saveRDS(result_mat, "StreamSTPCA80(sd3).RDS")
 #saveRDS(result_mat, "StreamSTPCA40(sd05).RDS")
 
 #saveRDS(result_mat, "StreamSTPCA40(sd1)nlt.RDS")
-saveRDS(result_list, "ListStreamSTPCA40(sd1)nlt.RDS")
+#saveRDS(result_list, "ListStreamSTPCA40(sd1)nlt.RDS")
+saveRDS(result_list, "ListStreamSTPCA80(sd1)nlt_withresidualwithtime.RDS")
 
 #evaluation
 #aaaa <- readRDS("~/Dropbox/R files/ListStreamSTPCA40(sd1)nlt.RDS")
@@ -733,5 +845,44 @@ saveRDS(result_list, "ListStreamSTPCA40(sd1)nlt.RDS")
 
 
 
+aaaa <- readRDS("~/Dropbox/Github/paper-StreamflowLifting/result_RDS/ListStreamSTPCA40(sd1)nlt_withresidual.RDS")
+bbbb <- c()
+shapiro_prob <- c()
+for(i in 1:length(aaaa)){
+  bbbb <- cbind(bbbb, aaaa[[i]]$result_new_mat[,2])
+  
+  shapiro_prob <- cbind(shapiro_prob,
+                        c(shapiro.test(aaaa[[i]]$result_a_res)$p.value,
+                          shapiro.test(aaaa[[i]]$result_denoise_res)$p.value,
+                          shapiro.test(aaaa[[i]]$result_denoise_res2)$p.value,
+                          shapiro.test(aaaa[[i]]$result_denoise_res3)$p.value
+                        ))
+  
+  shapiro_prob2 <- cbind(shapiro_prob,
+                         c(shapiro.test(aaaa[[i]]$result_a_new_res)$p.value,
+                           shapiro.test(aaaa[[i]]$result_denoise_res)$p.value,
+                           shapiro.test(aaaa[[i]]$result_denoise_res2)$p.value,
+                           shapiro.test(aaaa[[i]]$result_denoise_res3)$p.value
+                         ))
+}
+mean(bbbb[1,]*(sqrt(80/30)))
+mean(bbbb[2,]*(sqrt(80/30)))
+mean(bbbb[3,]*(sqrt(80/30)))
+mean(bbbb[4,]*(sqrt(80/30)))
+sd(bbbb[1,]*(sqrt(80/30)))
+sd(bbbb[2,]*(sqrt(80/30)))
+sd(bbbb[3,]*(sqrt(80/30)))
+sd(bbbb[4,]*(sqrt(80/30)))
 
+rowSums(shapiro_prob>=0.05)
+rowSums(shapiro_prob2>=0.05)
 
+plot(aaaa[[i]]$result_signal, aaaa[[i]]$result_denoise_new_res, main="f vs r", xlab="y", ylab="r")
+plot(aaaa[[i]]$result_denoise_new, aaaa[[i]]$result_denoise_new_res, main="fhat vs r", xlab="yhat", ylab="r")
+hist(aaaa[[i]]$result_denoise_new_res)
+shapiro.test(aaaa[[i]]$result_denoise_new_res)
+
+plot(aaaa[[i]]$result_signal, aaaa[[i]]$result_denoise_new_res3, main="f vs r", xlab="y", ylab="r")
+plot(aaaa[[i]]$result_denoise3_new, aaaa[[i]]$result_denoise_new_res3, main="fhat vs r", xlab="yhat", ylab="r")
+hist(aaaa[[i]]$result_denoise_new_res3)
+shapiro.test(aaaa[[i]]$result_denoise_new_res3)

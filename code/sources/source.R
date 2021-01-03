@@ -2215,6 +2215,7 @@ scatter_fill <- function (x, y, z,xlim=c(min(x),max(x)),ylim=c(min(y),max(y)),zl
   w <- (3 + mar.orig[2L]) * par("csi") * 2.24
   #layout(matrix(c(2, 1), ncol = 2L), widths = c(1, lcm(w)))
   
+  #zlim=c(min(z, na.rm=T), max(z, na.rm=T))
   # choose colors to interpolate
   levels <- seq(zlim[1],zlim[2],length.out = nlevels)
   #col <- colorRampPalette(c("red","yellow","dark green"))(nlevels) 

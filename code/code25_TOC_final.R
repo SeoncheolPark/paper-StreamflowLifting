@@ -1,5 +1,4 @@
 library(ggmap)
-register_google(key='AIzaSyAtGCNC-GzkyMQ7ocNYC_G_eW7jzbBJ8Lg')
 library(SpatioTemporal)
 library(plotrix)
 library(maps)
@@ -41,8 +40,8 @@ adjacency <- get_adjacency_stream(binaryIDs_obj)
 shreve_order <- compute_shreve(adjacency)
 
 #generate SSN obj
-#mf04 <- importSSN_stream(shreve_obj = shreve_order, location="Full", multipleplaces=TRUE) #데이터의 크기: 123개
-mf04 <- importSSN_stream(shreve_obj = shreve_order, location="Full", multipleplaces=TRUE, RID="corrected") #데이터의 크기: 123개
+mf04 <- importSSN_stream(shreve_obj = shreve_order, location="Full", multipleplaces=TRUE) #데이터의 크기: 123개
+#mf04 <- importSSN_stream(shreve_obj = shreve_order, location="Full", multipleplaces=TRUE, RID="corrected") #데이터의 크기: 123개
 #check basics
 dim(mf04@obspoints@SSNPoints[[1]]@point.data) #127 38
 length(unique(mf04@obspoints@SSNPoints[[1]]@point.data$RCH_ID)) #114

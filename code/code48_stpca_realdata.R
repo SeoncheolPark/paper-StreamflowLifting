@@ -303,15 +303,13 @@ points(location_imsi[-upper_seg,1], location_imsi[-upper_seg,2], pch=21, bg="ora
 points(location_imsi[upper_seg,1], location_imsi[upper_seg,2], pch=22, bg="purple", col="black")
 legend("topleft", pch=c(15,16), col=c("purple", "orange"), c("Most upstream", "Non-most upstream"), bty="n")
 
-
-
 ########################################
 #Start iteration
 ########################################
 n.seg <- 80
 #n.sub.length <- 80
 n.sub.length <- 30
-sd.val <- 2
+sd.val <- 1
 
 
 #adjacency_old 작성
@@ -664,18 +662,41 @@ for(ijk in 1:n.iter){
     result_new_mat[3,5] <- sqrt(sum(realweights[index_choose]*(colMeans(result_signal)[index_choose]-result_denoise2)^2)/length(index_choose))
     result_new_mat[4,5] <- sqrt(sum(realweights[index_choose]*(colMeans(result_signal)[index_choose]-result_denoise3)^2)/length(index_choose))
   }
-  result_list[[ijk]] <- result_new_mat
+  result_new_list <- list()
+  result_new_list$data <- data
+  result_new_list$result_new_mat <- result_new_mat
+  result_new_list$result_signal <- result_signal
+  result_new_list$result_a <- result_a$fit
+  result_new_list$result_denoise <- result_denoise
+  result_new_list$result_denoise2 <- result_denoise2
+  result_new_list$result_denoise3 <- result_denoise3
+  result_new_list$result_a_new <- result_a_new
+  result_new_list$result_denoise_new <- result_denoise_new
+  result_new_list$result_denoise2_new <- result_denoise_new2
+  result_new_list$result_denoise3_new <- result_denoise_new3
+  result_new_list$result_a_res <- data-result_a$fit
+  result_new_list$result_denoise_res <- data-result_denoise
+  result_new_list$result_denoise_res2 <- data-result_denoise2
+  result_new_list$result_denoise_res3 <- data-result_denoise3
+  result_new_list$result_a_new_res <- data-result_a_new[as.numeric(colnames(result_signal))]
+  result_new_list$result_denoise_new_res <- data-result_denoise_new[as.numeric(colnames(result_signal))]
+  result_new_list$result_denoise_new_res2 <- data-result_denoise_new2[as.numeric(colnames(result_signal))]
+  result_new_list$result_denoise_new_res3 <- data-result_denoise_new3[as.numeric(colnames(result_signal))]
+  result_new_list$index_choose <- index_choose
+  
+  result_list[[ijk]] <- result_new_list
 }
 #saveRDS(result_mat, "StreamSTPCA80(sd3).RDS")
 #saveRDS(result_mat, "StreamSTPCA40(sd05).RDS")
 
 #saveRDS(result_mat, "StreamSTPCA40(sd1)nlt.RDS")
-saveRDS(result_list, "RealListStreamSTPCA30(sd2)nlt.RDS")
+#saveRDS(result_list, "RealListStreamSTPCA30(sd1)nlt.RDS")
+saveRDS(result_list, "RealListStreamSTPCA30(sd1)nlt_withresidual.RDS")
 
 #evaluation
-#aaaa <- readRDS("~/Dropbox/Github/paper-StreamflowLifting/result_RDS/RealListStreamSTPCA30(sd1)nlt.RDS")
+aaaa <- readRDS("~/Dropbox/Github/paper-StreamflowLifting/result_RDS/RealListStreamSTPCA30(sd1)nlt.RDS")
 #aaaa <- readRDS("~/Dropbox/Github/paper-StreamflowLifting/result_RDS/RealListStreamSTPCA30(sd15)nlt.RDS")
-aaaa <- readRDS("~/Dropbox/Github/paper-StreamflowLifting/result_RDS/RealListStreamSTPCA30(sd2)nlt.RDS")
+#aaaa <- readRDS("~/Dropbox/Github/paper-StreamflowLifting/result_RDS/RealListStreamSTPCA30(sd2)nlt.RDS")
 bbbb <- array(as.numeric(unlist(aaaa)), dim=c(4,5,100))
 mean(bbbb[1,2,]*(sqrt(80/30)))
 mean(bbbb[2,2,]*(sqrt(80/30)))
@@ -687,6 +708,45 @@ sd(bbbb[3,2,]*(sqrt(80/30)))
 sd(bbbb[4,2,]*(sqrt(80/30)))
 
 
+aaaa <- readRDS("~/Dropbox/Github/paper-StreamflowLifting/result_RDS/RealListStreamSTPCA30(sd1)nlt_withresidual.RDS")
+bbbb <- c()
+shapiro_prob <- c()
+for(i in 1:length(aaaa)){
+  bbbb <- cbind(bbbb, aaaa[[i]]$result_new_mat[,2])
+  
+  shapiro_prob <- cbind(shapiro_prob,
+    c(shapiro.test(aaaa[[i]]$result_a_res)$p.value,
+    shapiro.test(aaaa[[i]]$result_denoise_res)$p.value,
+    shapiro.test(aaaa[[i]]$result_denoise_res2)$p.value,
+    shapiro.test(aaaa[[i]]$result_denoise_res3)$p.value
+    ))
+}
+mean(bbbb[1,]*(sqrt(80/30)))
+mean(bbbb[2,]*(sqrt(80/30)))
+mean(bbbb[3,]*(sqrt(80/30)))
+mean(bbbb[4,]*(sqrt(80/30)))
+sd(bbbb[1,]*(sqrt(80/30)))
+sd(bbbb[2,]*(sqrt(80/30)))
+sd(bbbb[3,]*(sqrt(80/30)))
+sd(bbbb[4,]*(sqrt(80/30)))
+
+rowSums(shapiro_prob>=0.05)
+
+plot(aaaa[[i]]$result_signal, aaaa[[i]]$result_a, xlim=range(c(aaaa[[i]]$result_signal, aaaa[[i]]$result_a)), ylim=range(c(aaaa[[i]]$result_signal, aaaa[[i]]$result_a)))
+plot(aaaa[[i]]$result_signal, aaaa[[i]]$result_a_new_res, main="f vs r", xlab="y", ylab="r")
+plot(aaaa[[i]]$result_a_new[as.numeric(colnames(aaaa[[i]]$result_signal))], aaaa[[i]]$result_a_new_res, main="fhat vs r", xlab="yhat", ylab="r")
+hist(aaaa[[i]]$result_a_new_res)
+shapiro.test(aaaa[[i]]$result_a_new_res)
+
+plot(aaaa[[i]]$result_signal, aaaa[[i]]$result_denoise, xlim=range(c(aaaa[[i]]$result_signal, aaaa[[i]]$result_denoise)), ylim=range(c(aaaa[[i]]$result_signal, aaaa[[i]]$result_denoise)))
+plot(aaaa[[i]]$result_signal, aaaa[[i]]$result_denoise_new_res, main="f vs r", xlab="y", ylab="r")
+plot(aaaa[[i]]$result_denoise_new[as.numeric(colnames(aaaa[[i]]$result_signal))], aaaa[[i]]$result_denoise_new_res, main="fhat vs r", xlab="yhat", ylab="r")
+hist(aaaa[[i]]$result_denoise_new_res)
+shapiro.test(aaaa[[i]]$result_denoise_new_res)
 
 
-
+plot(aaaa[[i]]$result_signal, aaaa[[i]]$result_denoise3, xlim=range(c(aaaa[[i]]$result_signal, aaaa[[i]]$result_denoise3)), ylim=range(c(aaaa[[i]]$result_signal, aaaa[[i]]$result_denoise3)))
+plot(aaaa[[i]]$result_signal, aaaa[[i]]$result_denoise_new_res3, main="f vs r", xlab="y", ylab="r")
+plot(aaaa[[i]]$result_denoise3_new[as.numeric(colnames(aaaa[[i]]$result_signal))], aaaa[[i]]$result_denoise_new_res3, main="fhat vs r", xlab="yhat", ylab="r")
+hist(aaaa[[i]]$result_denoise_new_res3)
+shapiro.test(aaaa[[i]]$result_denoise_new_res3)

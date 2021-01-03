@@ -298,7 +298,6 @@ source('~/Dropbox/R files/StreamFLow/sources/source_Flexible.R', chdir = TRUE)
 penalties_default <- c(50, 50, c(25, 5), 50, c(25, 5), c(25, 25))
 division_factor <- c(30, 25, 20, 15, 10, 5, 1, 0.5, 0.25, 0.125)
 AICc_vec <- rep(0, length(division_factor))
-start_time <- Sys.time()
 for(jjj in 1:length(division_factor)){
   result_a <- smnet_ST(realweights, adjacency, TweedData, TweedPredPoints, penalties=penalties_default/division_factor[jjj], plot.fig=FALSE, station=NULL, use.optim=FALSE, log.y=TRUE, model.type = c("c", "m"))
   AICc_vec[jjj] <- result_a$AICc
@@ -313,9 +312,6 @@ if(AICc_vec_min_index==1){
   opt_result <- optim(par=penalties_default/division_factor[AICc_vec_min_index], fn=smnet_ST, realweights=realweights, adjacency=adjacency, TweedData=TweedData, TweedPredPoints=TweedPredPoints, method="L-BFGS-B", lower=penalties_default/division_factor[(AICc_vec_min_index-1)], upper=penalties_default/division_factor[(AICc_vec_min_index+1)], log.y=TRUE, model.type = c("c", "m") )
 }
 opt_val <- opt_result$par
-end_time <- Sys.time()
-
-end_time - start_time
 
 location_unique <- unique(TweedData$location)
 result_7 <- smnet_ST(realweights, adjacency, TweedData, TweedPredPoints, penalties=opt_val, plot.fig=TRUE, station=location_unique, use.optim=FALSE, log.y=TRUE,model.type = c("c", "m") )
@@ -343,12 +339,7 @@ data_predicted0 <- data_predicted
 
 result_forward <- fwtnp_stream_S(data, example_network, adjacency=adjacency_old, realweights, TweedData, TweedPredPoints, nkeep = 2, intercept = TRUE, initboundhandl = "reflect",  neighbours = 1, closest = FALSE, LocalPred = streamPred_S, do.W = FALSE, varonly = FALSE)
 
-start_time <- Sys.time()
 result_denoise <- denoise_S(data, example_network, adjacency=adjacency_old, realweights, TweedData, TweedPredPoints, pred = streamPred_S, neigh = 1, int = TRUE, clo = FALSE, keep = 2, rule = "median", sd.scale=1, returnall = FALSE)
-end_time <- Sys.time()
-
-end_time - start_time
-
 colnames(result_denoise) <- colnames(data)
 initS_obj = initS_stream(X=as.row(as.numeric(names(data))), data=as.vector(data), example_network, adjacency=adjacency_old, realweights, pointsin= matrix(1:length(data), 1, length(data)))
 data_predicted <- initS_obj$weight_matrix%*%t(result_denoise) #result_denoise: proposed method
@@ -358,13 +349,8 @@ cl <- makeCluster(cores[1]-3) #not to overload your computer
 ##subset groupping
 index_sub_data <- data.frame(stations=c(1:length(data)), groups=as.factor(substr(example_network@obspoints@SSNPoints[[1]]@point.data$RCH_ID, start=1, stop=6)))
 registerDoParallel(cl)
-start_time <- Sys.time()
 #result_denoise_nlt <- denoise_Stream_S_perm(data, example_network, endpt=NULL, per=NULL, adjacency=adjacency_old, realweights, TweedData, TweedPredPoints, pred = streamPred_S, neigh = 1, int = TRUE, clo = FALSE, keep = keep, rule = "median", sd.scale=1, returnall = FALSE)
-result_nlt <- nlt_Stream_S(data, example_network, J=10, endpt=NULL, adjacency=adjacency_old, realweights, TweedData, TweedPredPoints, pred = streamPred_S, neigh = 1, int = TRUE, clo = FALSE, keep = 2, rule = "median", sd.scale=1, returnall = TRUE, index_sub_data=index_sub_data, max.subnum=5, ga=TRUE, oremovelist=result_forward$removelist)
-end_time <- Sys.time()
-
-end_time - start_time
-
+result_nlt <- nlt_Stream_S(data, example_network, J=100, endpt=NULL, adjacency=adjacency_old, realweights, TweedData, TweedPredPoints, pred = streamPred_S, neigh = 1, int = TRUE, clo = FALSE, keep = 2, rule = "median", sd.scale=1, returnall = TRUE, index_sub_data=index_sub_data, max.subnum=5, ga=TRUE, oremovelist=result_forward$removelist)
 #J=1, max.subnum=0으로 하면 S-Lifting(M) 결과와 정확하게 같음
 stopCluster(cl)
 initS_obj = initS_stream(X=as.row(as.numeric(names(data))), data=as.vector(data), example_network, adjacency=adjacency_old, realweights, pointsin= matrix(1:length(data), 1, length(data)))
@@ -376,8 +362,8 @@ data_predicted1 <- initS_obj$weight_matrix%*%denoising_ODonell
 
 zlims <- range(c(data, data_predicted, data_predicted0, data_predicted1, data_predicted2))+c(-0.05, 0.05)
 
-#pdf("result_TOC3.pdf", 7, 7)
-#png("result_TOC3.png", 700, 700)
+#pdf("result_TOC3(cluster6).pdf", 7, 7)
+#png("result_TOC3(cluster6).png", 700, 700)
 par(family = 'sans') 
 par(mar=c(3.1,2.1,3.1,1.1))
 par(mfrow=c(2,2))
@@ -482,149 +468,16 @@ result_new_mat[1,5] <- sqrt(sum(realweights[index_realdata,1]*(data_predicted0[i
 result_new_mat[2,5] <- sqrt(sum(realweights[index_realdata,1]*(data_predicted0[index_realdata,1]-data_predicted1[index_realdata,1])^2)/length(index_realdata)) #ODonnell
 result_new_mat[3,5] <- sqrt(sum(realweights[index_realdata,1]*(data_predicted0[index_realdata,1]-data_predicted2[index_realdata,1])^2)/length(index_realdata)) #S-Lifting (N)
 
-#saveRDS(result_new_mat, "GeumRiver.RDS")
+result_new_mat_list <- list()
+result_new_mat_list$result_new_mat <- result_new_mat
+result_new_mat_list$data_predicted_MLifting <- data_predicted
+result_new_mat_list$data_predicted_NLifting <- data_predicted2
+result_new_mat_list$data_predicted_ODonnell <- data_predicted1
+result_new_mat_list$data_predicted_rawinterpolation <- data_predicted0
+result_new_mat_list$result_nlt <- result_nlt
+result_new_mat_list$result_streamflowlifting <- result_denoise
+result_new_mat_list$result_ODonell <- denoising_ODonell
 
-########################################
-#교수님의 코멘트 적용
-########################################
-#1. 가장 fine한 level의 representation
-#S-lifting
-#이 중에서 한 가지만 선택
-#가장 왼쪽 (가장 fine한 level)
-#Final fitting 하지 말고 
-#Forward lifting scheme의 
-#반 (forward lifting scheme 그림 표현)
-#반 (forward lifting scheme 그림 표현)
-#네 개의 인덱스 중에 하나 가장 fine, 가장 coaser, 중간에 두 개
-#raw plot
-#result_forward_finerplot_1 <- fwtnp_stream_S(data, example_network, adjacency=adjacency_old, realweights, TweedData, TweedPredPoints, nkeep = 2, intercept = TRUE, initboundhandl = "reflect",  neighbours = 1, closest = FALSE, LocalPred = streamPred_S, do.W = FALSE, varonly = FALSE)
-
-result_forward_finerplot_2 <- fwtnp_stream_S(data, example_network, adjacency=adjacency_old, realweights, TweedData, TweedPredPoints, nkeep = 32, intercept = TRUE, initboundhandl = "reflect",  neighbours = 1, closest = FALSE, LocalPred = streamPred_S, do.W = FALSE, varonly = FALSE)
-initS_obj = initS_stream(X=as.row(as.numeric(names(data))), data=as.vector(data), example_network, adjacency=adjacency_old, realweights, pointsin=result_forward_finerplot_2$pointsin)
-data_predicted_finerplot_2 <- initS_obj$weight_matrix%*%result_forward_finerplot_2$coeff[result_forward_finerplot_2$pointsin]
-
-#check
-lr <- result_forward_finerplot_2$lengthsremove
-rem <- result_forward_finerplot_2$removelist
-newcoeff <- result_forward_finerplot_2$coeff
-keep=32
-int = TRUE; clo = FALSE
-fhat <- invtnp_stream_S(X=as.vector(as.numeric(names(data))), newcoeff, result_forward_finerplot_2$lengths, lr, result_forward_finerplot_2$pointsin,  rem, result_forward_finerplot_2$neighbrs, result_forward_finerplot_2$schemehist, result_forward_finerplot_2$interhist, length(result_forward_finerplot_2$x) - keep, int, neighbours=1, clo, LocalPred=streamPred_S,  data, example_network, adjacency=adjacency_old, realweights)
-round(data-fhat$coeff,5) #should be zero vectors
-
-initS_obj = initS_stream(X=as.row(as.numeric(names(data))), data=as.vector(data), example_network, adjacency=adjacency_old, realweights, pointsin=c(setdiff(c(1:length(data)),result_forward_finerplot_2$pointsin),127))
-#data_predicted_finerplot_2_detail <- initS_obj$weight_matrix%*%result_forward_finerplot_2$coeff[-setdiff(result_forward_finerplot_2$pointsin,127)]
-data_predicted_finerplot_2_detail <- initS_obj$weight_matrix%*%c(result_forward_finerplot_2$coeff[-result_forward_finerplot_2$pointsin], 0)
-initS_obj_2 = initS_stream(X=as.row(as.numeric(names(data))), data=as.vector(data), example_network, adjacency=adjacency_old, realweights, pointsin=which(!is.na(data_predicted_finerplot_2_detail)))
-data_predicted_finerplot_2_detail_new_2 <- initS_obj_2$weight_matrix%*%data_predicted_finerplot_2_detail[complete.cases(data_predicted_finerplot_2_detail)]
+saveRDS(result_new_mat_list, "GeumRiver(modified100trajectories).RDS")
 
 
-#initS_obj = initS_stream(X=as.row(as.numeric(names(data))), data=as.vector(-data), example_network, adjacency=adjacency_old, realweights, pointsin=setdiff(c(1:length(data)),result_forward_finerplot_2$pointsin))
-#data_predicted_finerplot_2_detail_new <- initS_obj$weight_matrix%*%(result_forward_finerplot_2$coeff[-result_forward_finerplot_2$pointsin])
-#initS_obj_2 = initS_stream(X=as.row(as.numeric(names(data))), data=as.vector(data), example_network, adjacency=adjacency_old, realweights, pointsin=which(!is.na(data_predicted_finerplot_2_detail_new)))
-#data_predicted_finerplot_2_detail_new_2 <- initS_obj_2$weight_matrix%*%data_predicted_finerplot_2_detail_new[complete.cases(data_predicted_finerplot_2_detail_new)]
-
-
-#next level
-datanew <- as.numeric(result_forward_finerplot_2$coeff[result_forward_finerplot_2$pointsin])
-names(datanew) <- names(data)[result_forward_finerplot_2$pointsin]
-example_network_new <- example_network
-example_network_new@obspoints@SSNPoints[[1]]@network.point.coords <- example_network_new@obspoints@SSNPoints[[1]]@network.point.coords[result_forward_finerplot_2$pointsin,]
-example_network_new@obspoints@SSNPoints[[1]]@point.coords <- example_network_new@obspoints@SSNPoints[[1]]@point.coords[result_forward_finerplot_2$pointsin,]
-example_network_new@obspoints@SSNPoints[[1]]@point.data <- example_network_new@obspoints@SSNPoints[[1]]@point.data[result_forward_finerplot_2$pointsin,]
-example_network_new@obspoints@SSNPoints[[1]]@points.bbox[1,] <- range(example_network_new@obspoints@SSNPoints[[1]]@point.data$경도.Degree.)
-example_network_new@obspoints@SSNPoints[[1]]@points.bbox[2,] <- range(example_network_new@obspoints@SSNPoints[[1]]@point.data$위도.Degree.)
-
-result_forward_finerplot_3 <- fwtnp_stream_S(datanew, example_network_new, adjacency=adjacency_old, realweights, TweedData, TweedPredPoints, nkeep = 8, intercept = TRUE, initboundhandl = "reflect",  neighbours = 1, closest = FALSE, LocalPred = streamPred_S, do.W = FALSE, varonly = FALSE)
-#result_forward_finerplot_3 <- fwtnp_stream_S(data, example_network, adjacency=adjacency_old, realweights, TweedData, TweedPredPoints, nkeep = 8, intercept = TRUE, initboundhandl = "reflect",  neighbours = 1, closest = FALSE, LocalPred = streamPred_S, do.W = FALSE, varonly = FALSE)
-initS_obj = initS_stream(X=as.row(as.numeric(names(datanew))), data=as.vector(datanew), example_network_new, adjacency=adjacency_old, realweights, pointsin=result_forward_finerplot_3$pointsin)
-data_predicted_finerplot_3 <- initS_obj$weight_matrix%*%result_forward_finerplot_3$coeff[result_forward_finerplot_3$pointsin]
-
-initS_obj = initS_stream(X=as.row(as.numeric(names(datanew))), data=as.vector(datanew), example_network_new, adjacency=adjacency_old, realweights, pointsin=c(setdiff(c(1:length(datanew)),result_forward_finerplot_3$pointsin),length(datanew)))
-#data_predicted_finerplot_3_detail <- initS_obj$weight_matrix%*%result_forward_finerplot_3$coeff[-setdiff(result_forward_finerplot_3$pointsin,32)]
-data_predicted_finerplot_3_detail <- initS_obj$weight_matrix%*%c(result_forward_finerplot_3$coeff[-result_forward_finerplot_3$pointsin], 0)
-initS_obj_2 = initS_stream(X=as.row(as.numeric(names(datanew))), data=as.vector(datanew), example_network_new, adjacency=adjacency_old, realweights, pointsin=which(!is.na(data_predicted_finerplot_3_detail)))
-data_predicted_finerplot_3_detail_new_2 <- initS_obj_2$weight_matrix%*%data_predicted_finerplot_3_detail[complete.cases(data_predicted_finerplot_3_detail)]
-
-
-#initS_obj = initS_stream(X=as.row(as.numeric(names(datanew))), data=as.vector(datanew), example_network_new, adjacency=adjacency_old, realweights, pointsin=setdiff(c(1:length(datanew)),result_forward_finerplot_3$pointsin))
-#data_predicted_finerplot_3_detail_new <- initS_obj$weight_matrix%*%(-result_forward_finerplot_3$coeff[-result_forward_finerplot_3$pointsin])
-#initS_obj_2 = initS_stream(X=as.row(as.numeric(names(datanew))), data=as.vector(datanew), example_network_new, adjacency=adjacency_old, realweights, pointsin=which(!is.na(data_predicted_finerplot_3_detail_new)))
-#data_predicted_finerplot_3_detail_new_2 <- initS_obj_2$weight_matrix%*%data_predicted_finerplot_3_detail_new[complete.cases(data_predicted_finerplot_3_detail_new)]
-
-
-#next level
-datanewnew <- as.numeric(result_forward_finerplot_3$coeff[result_forward_finerplot_3$pointsin])
-names(datanewnew) <- names(datanew)[result_forward_finerplot_3$pointsin]
-example_network_newnew <- example_network_new
-example_network_newnew@obspoints@SSNPoints[[1]]@network.point.coords <- example_network_newnew@obspoints@SSNPoints[[1]]@network.point.coords[result_forward_finerplot_3$pointsin,]
-example_network_newnew@obspoints@SSNPoints[[1]]@point.coords <- example_network_newnew@obspoints@SSNPoints[[1]]@point.coords[result_forward_finerplot_3$pointsin,]
-example_network_newnew@obspoints@SSNPoints[[1]]@point.data <- example_network_newnew@obspoints@SSNPoints[[1]]@point.data[result_forward_finerplot_3$pointsin,]
-example_network_newnew@obspoints@SSNPoints[[1]]@points.bbox[1,] <- range(example_network_newnew@obspoints@SSNPoints[[1]]@point.data$경도.Degree.)
-example_network_newnew@obspoints@SSNPoints[[1]]@points.bbox[2,] <- range(example_network_newnew@obspoints@SSNPoints[[1]]@point.data$위도.Degree.)
-
-result_forward_finerplot_4 <- fwtnp_stream_S(datanewnew, example_network_newnew, adjacency=adjacency_old, realweights, TweedData, TweedPredPoints, nkeep = 2, intercept = TRUE, initboundhandl = "reflect",  neighbours = 1, closest = FALSE, LocalPred = streamPred_S, do.W = FALSE, varonly = FALSE)
-initS_obj = initS_stream(X=as.row(as.numeric(names(datanewnew))), data=as.vector(datanewnew), example_network_newnew, adjacency=adjacency_old, realweights, pointsin=result_forward_finerplot_4$pointsin)
-data_predicted_finerplot_4 <- initS_obj$weight_matrix%*%result_forward_finerplot_4$coeff[result_forward_finerplot_4$pointsin]
-
-
-#initS_obj = initS_stream(X=as.row(as.numeric(names(data))), data=as.vector(data), example_network, adjacency=adjacency_old, realweights, pointsin=c(setdiff(c(1:length(data)),result_forward_finerplot_4$pointsin),127))
-initS_obj = initS_stream(X=as.row(as.numeric(names(datanewnew))), data=as.vector(datanewnew), example_network_newnew, adjacency=adjacency_old, realweights, pointsin=c(setdiff(c(1:length(datanewnew)),result_forward_finerplot_4$pointsin),length(datanewnew)))
-data_predicted_finerplot_4_detail <- initS_obj$weight_matrix%*%result_forward_finerplot_4$coeff[-setdiff(result_forward_finerplot_4$pointsin,8)]
-data_predicted_finerplot_4_detail <- initS_obj$weight_matrix%*%c(result_forward_finerplot_4$coeff[-result_forward_finerplot_4$pointsin], 0)
-initS_obj_2 = initS_stream(X=as.row(as.numeric(names(datanewnew))), data=as.vector(datanewnew), example_network_newnew, adjacency=adjacency_old, realweights, pointsin=which(!is.na(data_predicted_finerplot_4_detail)))
-data_predicted_finerplot_4_detail_new_2 <- initS_obj_2$weight_matrix%*%data_predicted_finerplot_4_detail[complete.cases(data_predicted_finerplot_4_detail)]
-
-
-#initS_obj = initS_stream(X=as.row(as.numeric(names(datanewnew))), data=as.vector(datanewnew), example_network_newnew, adjacency=adjacency_old, realweights, pointsin=setdiff(c(1:length(datanewnew)),result_forward_finerplot_4$pointsin))
-#data_predicted_finerplot_4_detail_new <- initS_obj$weight_matrix%*%(-result_forward_finerplot_4$coeff[-result_forward_finerplot_4$pointsin])
-#initS_obj_2 = initS_stream(X=as.row(as.numeric(names(datanewnew))), data=as.vector(datanewnew), example_network_newnew, adjacency=adjacency_old, realweights, pointsin=which(!is.na(data_predicted_finerplot_4_detail_new)))
-#data_predicted_finerplot_4_detail_new_2 <- initS_obj_2$weight_matrix%*%data_predicted_finerplot_4_detail_new[complete.cases(data_predicted_finerplot_4_detail_new)]
-
-
-########################################
-#교수님의 코멘트 적용
-########################################
-#2. 4*2 행렬 (이 그림을 그려야 O'Donnell의 논문과 차별이 가능하다)
-#(1,1): 가장 finest한 피팅 결과 
-#(2,1): 2번째로 finish (2,2): 2번째 결과의 detail
-#(3,1): 3번째로 finish (3,2): 3번째 결과의 detail
-#(4,1): 2번째로 finish (4,2): 2번째 결과의 detail
-
-#pdf("result_TOC_detail3(rev).pdf", 6, 9)
-#png("result_TOC_detail3(rev).png", 600, 900)
-
-par(family = 'sans') 
-par(mar=c(3.1,2.1,3.1,1.1))
-par(mfrow=c(2,3))
-
-range.val <- max(abs(c(data, data_predicted0, data_predicted_finerplot_2, data_predicted_finerplot_3, data_predicted_finerplot_4, data_predicted_finerplot_2_detail_new_2, data_predicted_finerplot_3_detail_new_2, data_predicted_finerplot_4_detail_new_2)))
-range.val.c <- range(c(data, data_predicted0, data_predicted_finerplot_2, data_predicted_finerplot_3, data_predicted_finerplot_4))
-range.val.d <- range(c(data_predicted_finerplot_2_detail_new_2, data_predicted_finerplot_3_detail_new_2, data_predicted_finerplot_4_detail_new_2))
-palette<-colorRampPalette(c("cyan", "green", "yellow", "red", "black"))
-palette.c<-colorRampPalette(c("cyan", "green", "yellow", "red", "black"))
-palette.d<-colorRampPalette(rev(rainbow(5)))
-
-scatter_fill(TweedPredPoints$Longitude, TweedPredPoints$Latitude ,data_predicted_finerplot_2[TweedPredPoints$StreamUnit], pch=16, cex=TweedPredPoints$Weights, xlab="", ylab="", zlim=range.val.c, main="(a) Level 3, Coarser", cex.main=1.5, smallplot=c(0.75,0.8,0.6,0.85), coldefault=palette.c)
-points(example_network@obspoints@SSNPoints[[1]]@point.coords[result_forward_finerplot_2$pointsin,1], example_network@obspoints@SSNPoints[[1]]@point.coords[result_forward_finerplot_2$pointsin,2], pch=22)
-
-scatter_fill(TweedPredPoints$Longitude, TweedPredPoints$Latitude ,data_predicted_finerplot_2_detail[TweedPredPoints$StreamUnit], pch=16, cex=TweedPredPoints$Weights, xlab="", ylab="", zlim=range.val.d, main="(b) Level 3, Detail", cex.main=1.5, smallplot=c(0.75,0.8,0.6,0.85), coldefault=palette.d)
-points(example_network@obspoints@SSNPoints[[1]]@point.coords[-result_forward_finerplot_2$pointsin,1], example_network@obspoints@SSNPoints[[1]]@point.coords[-result_forward_finerplot_2$pointsin,2], pch=23)
-
-scatter_fill(TweedPredPoints$Longitude, TweedPredPoints$Latitude ,data_predicted_finerplot_3[TweedPredPoints$StreamUnit], pch=16, cex=TweedPredPoints$Weights, xlab="", ylab="", zlim=range.val.c, main="(c) Level 2, Coarser", cex.main=1.5, smallplot=c(0.75,0.8,0.6,0.85), coldefault=palette.c)
-points(example_network_new@obspoints@SSNPoints[[1]]@point.coords[result_forward_finerplot_3$pointsin,1], example_network_new@obspoints@SSNPoints[[1]]@point.coords[result_forward_finerplot_3$pointsin,2], pch=22)
-
-scatter_fill(TweedPredPoints$Longitude, TweedPredPoints$Latitude ,data_predicted_finerplot_3_detail[TweedPredPoints$StreamUnit], pch=16, cex=TweedPredPoints$Weights, xlab="", ylab="", zlim=range.val.d, main="(d) Level 2, Detail", cex.main=1.5, smallplot=c(0.75,0.8,0.6,0.85), coldefault=palette.d)
-#points(example_network@obspoints@SSNPoints[[1]]@point.coords[-result_forward_finerplot_3$pointsin,1], example_network@obspoints@SSNPoints[[1]]@point.coords[-result_forward_finerplot_3$pointsin,2], pch=23)
-#points(example_network@obspoints@SSNPoints[[1]]@point.coords[setdiff(result_forward_finerplot_2$pointsin,result_forward_finerplot_3$pointsin),1], example_network@obspoints@SSNPoints[[1]]@point.coords[setdiff(result_forward_finerplot_2$pointsin,result_forward_finerplot_3$pointsin),2], pch=23)
-points(example_network_new@obspoints@SSNPoints[[1]]@point.coords[-result_forward_finerplot_3$pointsin,1], example_network_new@obspoints@SSNPoints[[1]]@point.coords[-result_forward_finerplot_3$pointsin,2], pch=23)
-
-scatter_fill(TweedPredPoints$Longitude, TweedPredPoints$Latitude ,data_predicted_finerplot_4[TweedPredPoints$StreamUnit], pch=16, cex=TweedPredPoints$Weights, xlab="", ylab="", zlim=range.val.c, main="(e) Level 1, Coarser", cex.main=1.5, smallplot=c(0.75,0.8,0.6,0.85), coldefault=palette.c)
-points(example_network_newnew@obspoints@SSNPoints[[1]]@point.coords[result_forward_finerplot_4$pointsin,1], example_network_newnew@obspoints@SSNPoints[[1]]@point.coords[result_forward_finerplot_4$pointsin,2], pch=22)
-
-scatter_fill(TweedPredPoints$Longitude, TweedPredPoints$Latitude ,data_predicted_finerplot_4_detail[TweedPredPoints$StreamUnit], pch=16, cex=TweedPredPoints$Weights, xlab="", ylab="", zlim=range.val.d, main="(f) Level 1, Detail", cex.main=1.5, smallplot=c(0.75,0.8,0.6,0.85), coldefault=palette.d)
-#points(example_network@obspoints@SSNPoints[[1]]@point.coords[-result_forward_finerplot_4$pointsin,1], example_network@obspoints@SSNPoints[[1]]@point.coords[-result_forward_finerplot_4$pointsin,2], pch=23)
-#points(example_network@obspoints@SSNPoints[[1]]@point.coords[setdiff(result_forward_finerplot_3$pointsin,result_forward_finerplot_4$pointsin),1], example_network@obspoints@SSNPoints[[1]]@point.coords[setdiff(result_forward_finerplot_3$pointsin,result_forward_finerplot_4$pointsin),2], pch=23)
-points(example_network_newnew@obspoints@SSNPoints[[1]]@point.coords[-result_forward_finerplot_4$pointsin,1], example_network_newnew@obspoints@SSNPoints[[1]]@point.coords[-result_forward_finerplot_4$pointsin,2], pch=23)
-
-dev.off()

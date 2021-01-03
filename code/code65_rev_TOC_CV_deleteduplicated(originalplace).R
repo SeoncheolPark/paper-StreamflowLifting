@@ -1,8 +1,6 @@
-
 deleted_ind_cand <- c(96:114)
 for(jkl in 1:length(deleted_ind_cand)){
   library(ggmap)
-  register_google(key='AIzaSyAtGCNC-GzkyMQ7ocNYC_G_eW7jzbBJ8Lg')
   library(SpatioTemporal)
   library(plotrix)
   library(maps)

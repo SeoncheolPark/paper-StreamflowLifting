@@ -2,6 +2,7 @@ library(adlift)
 library(xts)
 library(zoo)
 library(riverdist)
+library(sjmisc)
 #밑의 함수들을 돌릴 때 example_network에 upDist, rid가 반드시 있어야 함
 
 denoise_S <- function (data, example_network, adjacency=adjacency_old, realweights, TweedData, TweedPredPoints, pred = streamPred_S, neigh = 1, int = TRUE, clo = FALSE, keep = 2, rule = "median", sd.scale=1, returnall = FALSE, plot.fig = FALSE, plot.individual = FALSE, pollutant=NULL, polluyear=NULL, plot.thesis=FALSE) {
@@ -352,8 +353,11 @@ fwtnp_stream_S <- function(data, example_network, adjacency=adjacency_old, realw
   for (j in 1:matno) {
     cat(paste("Level ", (matno-j+1)), "\n")
     remove <- order(lengths)[1]
+    #(Oct 19, 2020 수정)
     if(adjacency_old$rid_bid[example_network@obspoints@SSNPoints[[1]]@point.data$rid[pointsin[remove]],2]=="1"){
-      remove <- order(lengths)[2]
+      if(example_network@obspoints@SSNPoints[[1]]@point.data$upDist[pointsin[remove]]==min(example_network@obspoints@SSNPoints[[1]]@point.data$upDist)){
+        remove <- order(lengths)[2]
+      }
     }
     #if(pointsin[remove]==68){
     #  remove <- order(lengths)[2]
@@ -1030,9 +1034,192 @@ getnbrs_segment <- function(segment.num, pointsin, example_network, adjacency, u
   }
 }
 
+#getnbrs_fast: version Oct 11, 2020
+getnbrs_fast_old <- function(segment.num=NULL, pointsin, example_network=NULL, adjacency, upperExtra=FALSE, remove=NULL){
+  #getnbrs_segment 함수 대용으로 이 함수보다 더 빨리 계산하도록 설계된 함수
+  #segment.num (제거하려는 remove observation이 위치한 segment number)
+  #pointsin (특정 레벨에 들어있는 obs들의 index) (이것들의 segment index가 아님)
+  #example_network: initint2_stream에서 작성된 SpatialStreamNetwork object
+  #adjacency: adjacency matrix
+  #upperExtra: 추후에 neighborhood size가 더 커질 때 활용할 수 있을듯
+  #remove: segment.num 인자를 안받고 remove observation의 index를 받아도 처리 가능케 설계
+  
+  #output에 대한 설명 필요
+  #nbrs
+  #segs
+  #nbrs_upstream
+  #nbrs_downstream
+  #segs_upstream
+  #segs_downstream
+  #direct
+  
+  #segment.num == remove
+  #pointsin == remining segements
+  #adjacency: adjacency matrices
+  if(is.null(remove) & is.null(segment.num)){
+    stop("we need segment.num or remove")
+  }
+  if(!is.null(example_network)){
+    target.segment <- adjacency$rid_bid[segment.num,2]
+    points.segmentID <- example_network@obspoints@SSNPoints[[1]]@point.data$rid[pointsin]
+    points.segmentID <- as.numeric(points.segmentID) #(20190402 수정)
+    points.upperDist <- example_network@obspoints@SSNPoints[[1]]@point.data$upDist[pointsin]
+    points.segment <- adjacency$rid_bid[points.segmentID,2] 
+    if(!is.null(remove)){
+      segment.num=example_network@obspoints@SSNPoints[[1]]@point.data$rid[remove]
+    }
+  }
+  adjacency_full_mat <- as.matrix(adjacency$adjacency)
+  rowSums_result <- rowSums(adjacency_full_mat)
+  colSums_result <- colSums(adjacency_full_mat)
+  nbrs_candidate <- c()
+  segs_candidate <- c()
+  
+  nbrs_lower_candidate <- c()
+  nbrs_upper_candidate <- c()
+  segs_lower_candidate <- c()
+  segs_upper_candidate <- c()
+  
+  if(segment.num%in%points.segmentID){
+    return(list(nbrs=pointsin[which(segment.num==points.segmentID)], segs=NULL, nbrs_upstream=nbrs_upper_candidate, nbrs_downstream=nbrs_lower_candidate, segs_upstream=segs_upper_candidate, segs_downstream=segs_lower_candidate, direct=pointsin[which(segment.num==points.segmentID)]))
+  }else{
+    
+    #(1) 하류
+    #print("compute downstream neighbors")
+    if(rowSums_result[segment.num]!=0){
+      lower_index_old <- segment.num
+      while(TRUE){
+        lower_index_imsi <- which(adjacency_full_mat[lower_index_old,]!=0)
+        if(lower_index_imsi %in% points.segmentID){
+          #nbrs_lower_candidate <- c(nbrs_lower_candidate, lower_index_imsi)
+          if(length(which(lower_index_imsi==points.segmentID))==1){
+            #(1-1) 해당 대상 segment에 관찰값이 1인 경우
+            nbrs_lower_candidate <- c(nbrs_lower_candidate, pointsin[which(lower_index_imsi==points.segmentID)])
+            #segs_lower_candidate <- c(segs_lower_candidate, lower_index_imsi)
+          }else{
+            #(1-2) 해당 대상 segment에 관찰값이 2 또는 3인 경우
+            pointsin_candidate <- pointsin[which(lower_index_imsi==points.segmentID)]
+            #하류니까 example_network@obspoints@SSNPoints[[1]]@point.data$upDist가 큰 지점
+            nbrs_lower_candidate <- c(nbrs_lower_candidate, pointsin_candidate[which.max(example_network@obspoints@SSNPoints[[1]]@point.data$upDist[pointsin_candidate])])
+          }
+          #그럼 관찰값이 있으므로 종료
+          break
+        }else{
+          segs_lower_candidate <- c(segs_lower_candidate, lower_index_imsi)
+          lower_index_old <- lower_index_imsi
+        }
+        if(rowSums_result[lower_index_old]==0){
+          break
+        }
+      }
+    }
+    
+    #(2) 상류
+    #print("compute upstream neighbors")
+    adjacency_num_remove <- adjacency$rid_bid[segment.num,2]
+    distUpstream_remove <- example_network@network.line.coords$DistanceUpstream[segment.num]
+    distdiff <- points.upperDist-distUpstream_remove
+    #nchar(adjacency_num_remove)
+    segnum_depth <- nchar(adjacency_num_remove)
+    #which(sapply(adjacency$rid_bid[,2], nchar) >= nchar(adjacency_num_remove))
+    #주의사항 : upper_candidate_index는 segment number임
+    upper_candidate_index <- which(sapply(adjacency$rid_bid[,2], function(x) substr(x, start=1, stop=nchar(adjacency_num_remove)))==adjacency_num_remove)
+    upper_candidate_index <- setdiff(upper_candidate_index, segment.num)
+    upper_pointsin_candidate_index <- pointsin[which(points.segmentID %in% upper_candidate_index)]
+    upper_candidate_index_char <- adjacency$rid_bid[upper_candidate_index,2]
+    upper_candidate_index_char_old <- adjacency$rid_bid[,2]
+    
+    remove_index <- c()
+    remove_segment_imsi <- c()
+    
+    if(length(upper_pointsin_candidate_index)!=0){
+      
+      while(TRUE){
+        remove_index_imsi <- c()
+        #가장 가까운 이웃 추가(point관련)
+        upper_pointsin_index_imsi <- upper_pointsin_candidate_index[which.min(distdiff[match(upper_pointsin_candidate_index, pointsin)])]
+        nbrs_upper_candidate <- sort(unique(c(nbrs_upper_candidate, upper_pointsin_index_imsi)))
+        
+        #(segment관련)
+        #upper_index_imsi <- upper_candidate_index[upper_pointsin_index_imsi]
+        upper_index_imsi <- example_network@obspoints@SSNPoints[[1]]@point.data$rid[upper_pointsin_index_imsi]
+        
+        #가장 가까운 이웃과 segment 사이의 segment 추가
+        #points.segment[upper_pointsin_index_imsi]
+        #target.segment
+        
+        crit_a <- sapply(upper_candidate_index_char, function(x) substr(x, start=1, stop=nchar(adjacency_num_remove)))==adjacency_num_remove
+        crit_b <- sapply(upper_candidate_index_char, function(x) str_contains(points.segment[upper_pointsin_index_imsi], pattern=x))
+        
+        within_segment <- upper_candidate_index[setdiff(which(crit_a & crit_b), which(upper_candidate_index_char==adjacency$rid_bid[upper_index_imsi,2]))]
+        within_segment <- setdiff(within_segment, points.segmentID)
+        if(length(within_segment)!=0){
+          #segment 업데이트
+          segs_upper_candidate <- sort(unique(c(segs_upper_candidate, within_segment)))
+          remove_index_imsi <- sort(unique(c(remove_index_imsi)))
+          #upper_candidate_index <- setdiff(upper_candidate_index, within_segment) #segment 숫자를 줄인다?
+        }
+        
+        #해당 segment 위의 지점들을 모두 제거해준다
+        upper_index_upper <- intersect(which(sapply(adjacency$rid_bid[upper_candidate_index,2], function(x) substr(x, start=1, stop=nchar(adjacency$rid_bid[upper_index_imsi,2])))==adjacency$rid_bid[upper_index_imsi,2] ),
+                                       which(sapply(adjacency$rid_bid[upper_candidate_index,2], nchar) > nchar(adjacency$rid_bid[upper_index_imsi,2]) ) )
+        if(length(upper_index_upper)!=0){
+          remove_index_imsi <- c(remove_index_imsi, sort(upper_candidate_index[upper_index_upper]))                               
+        }
+        
+        remove_index <- sort(unique(c(remove_index, remove_index_imsi, upper_index_imsi)))
+        
+        
+        # upper_pointsin_index_imsi
+        remove_index_imsi_add <- upper_candidate_index[which(substr(upper_candidate_index_char_old[upper_candidate_index], start=1, stop=nchar(adjacency$rid_bid[upper_index_imsi,2]))==adjacency$rid_bid[upper_index_imsi,2])]
+        remove_index <- sort(unique(c(remove_index, remove_index_imsi_add)))
+        upper_candidate_index <- setdiff(upper_candidate_index, remove_index_imsi_add)
+        
+        
+        
+        #포인트 제거 
+        upper_pointsin_candidate_index <- setdiff(upper_pointsin_candidate_index, nbrs_upper_candidate)
+        #upper_pointsin_candidate_index <- upper_pointsin_candidate_index[!(points.segmentID[upper_pointsin_candidate_index]%in%remove_index)]
+        upper_pointsin_candidate_index <- upper_pointsin_candidate_index[!(example_network@obspoints@SSNPoints[[1]]@point.data$rid[upper_pointsin_candidate_index]%in%remove_index)]
+        
+        if(length(upper_pointsin_candidate_index)==0){
+          if(length(upper_candidate_index)!=0){
+            upper_candidate_index <- setdiff(upper_candidate_index, points.segmentID)
+            segs_upper_candidate <- sort(unique(c(segs_upper_candidate, upper_candidate_index)))
+            remove_index <- sort(unique(c(remove_index, upper_candidate_index)))
+          }
+        }
+        upper_candidate_index <- setdiff(upper_candidate_index, remove_index) #segment 숫자를 줄인다?
+        
+        
+        if(length(upper_candidate_index)==0){
+          break
+        }
+      }
+      
+    }else if(length(upper_candidate_index)!=0){
+      #상류 segment들이 있지만 관찰 pt는 하나도 없을 때
+      segs_upper_candidate <- upper_candidate_index 
+    }
+    
+    #정리
+    nbrs_upper_candidate <- sort(nbrs_upper_candidate)
+    nbrs_lower_candidate <- sort(nbrs_lower_candidate)
+    segs_upper_candidate <- sort(segs_upper_candidate)
+    segs_lower_candidate <- sort(segs_lower_candidate)
+    
+    #print(nbrs_upper_candidate)
+    #print(nbrs_lower_candidate)
+    #print(segs_upper_candidate)
+    #print(segs_lower_candidate)
+    
+    nbrs_final <- sort(c(nbrs_lower_candidate, nbrs_upper_candidate))
+    segs_final <- sort(c(segs_lower_candidate, segs_upper_candidate))
+    return(list(nbrs=nbrs_final, segs=segs_final, nbrs_upstream=nbrs_upper_candidate, nbrs_downstream=nbrs_lower_candidate, segs_upstream=segs_upper_candidate, segs_downstream=segs_lower_candidate, direct=NULL))
+  }
+}
 
-
-
+#getnbrs_fast: first submission version
 getnbrs_fast <- function(segment.num=NULL, pointsin, example_network=NULL, adjacency, upperExtra=FALSE, remove=NULL){
   #getnbrs_segment 함수 대용으로 이 함수보다 더 빨리 계산하도록 설계된 함수
   #segment.num (제거하려는 remove observation이 위치한 segment number)
@@ -1110,6 +1297,29 @@ getnbrs_fast <- function(segment.num=NULL, pointsin, example_network=NULL, adjac
         }
       }
     }
+    
+    #(1) 하류: while 안쓰고 하는 버전 (속도 더 느려짐, 2020년 10월 11일)
+    #print("compute downstream neighbors")
+    #if(segment.num%in%points.segmentID){
+    #  return(list(nbrs=pointsin[which(segment.num==points.segmentID)], segs=NULL, nbrs_upstream=nbrs_upper_candidate, nbrs_downstream=nbrs_lower_candidate, segs_upstream=segs_upper_candidate, segs_downstream=segs_lower_candidate, direct=pointsin[which(segment.num==points.segmentID)]))
+    #}else{
+    #  if(rowSums_result[segment.num]!=0){
+    #    lower_index_old <- segment.num
+    #    
+    #    lower_seg_candidate <- setdiff(which(sapply(adjacency$rid_bid[,2], function(x) substr(adjacency$rid_bid[segment.num,2], start=1, stop=nchar(x))==x)), segment.num)
+    #    lower_nbrs_candidate <- pointsin[which(points.segmentID %in% lower_seg_candidate)]
+    #    
+    #    nbrs_lower_candidate <- lower_nbrs_candidate[which.max(distdiff[match(lower_nbrs_candidate, pointsin)])]
+    #    
+    #    nbrs_lower_candidate_segID <- points.segmentID[match(nbrs_lower_candidate, pointsin)]
+    #    nbrs_lower_candidate_seg <- points.segment[match(nbrs_lower_candidate, pointsin)]
+    #    
+    #    segs_lower_candidate <- lower_seg_candidate[-which(sapply(adjacency$rid_bid[lower_seg_candidate,2], function(x) nchar(x)<=nchar(nbrs_lower_candidate_seg)))]
+    #    if(length(segs_lower_candidate)==0){
+    #      segs_lower_candidate <- NULL
+    #    }
+    #  }
+    #}
     
     #(2) 상류
     #print("compute upstream neighbors")

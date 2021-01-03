@@ -46,6 +46,7 @@ smnet_ST <- function(realweights, adjacency, TweedData, TweedPredPoints, penalti
     #par(mar = c(1.2, 8, 2.7, 8))
     #colour.key(main.cols, brks = range(log(TweedData$nitrate)))
     
+    #my modification: using get_map function in ggmap package
     place.for.plot <- unique(TweedData[,c(4,5)])
     get_map(location=c(lat = sum(range(TweedPredPoints$Latitude))/2, lon = sum(range(TweedPredPoints$Longitude))/2 ), zoom=10, maptype="terrain", source="google") %>%
       ggmap(extent = "device") + geom_point(data=TweedPredPoints, aes(x=Longitude, y=Latitude)) + geom_point(data=place.for.plot, aes(x=Long, y=Lat), color="red", size=3)
@@ -93,8 +94,8 @@ smnet_ST <- function(realweights, adjacency, TweedData, TweedPredPoints, penalti
     
     if("c"%in%model.type){
       # construct intercept column of model matrix ("c")
-      X.list<-c(X.list, list(ones = as.spam(matrix(1, nrow = length(response),  ncol = 1)))) #length(y)*1 1로 구성된 벡터 반환
-      model.mat<-X.list$ones
+      X.list<-c(X.list, list(ones = as.spam(matrix(1, nrow = length(response),  ncol = 1)))) #length(y)*1 1로 구성된 벡터 반환 #X.list[[1]]에 들어감
+      model.mat<-X.list$ones #(n(data)*1, 1로만 채워진 matrix)
     }
     
     # construct network model matrix and network penalty ("m")
