@@ -1,5 +1,4 @@
 library(ggmap)
-register_google(key='AIzaSyAtGCNC-GzkyMQ7ocNYC_G_eW7jzbBJ8Lg')
 #thinning folder의 test_SpatioTemporal 함수 보고 작성
 library(SpatioTemporal)
 library(plotrix)
