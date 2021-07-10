@@ -384,9 +384,12 @@ while(TRUE){
       #generate Sigma matrix
       rho_vec <- weight_vec_candidate2[next_cand]/sum(weight_vec_candidate2[next_cand])
       for(j in 1:length(next_cand)){
-        Sigm <- matrix(c(1,rho_vec[j],rho_vec[j],1), nrow=2, ncol=2)
+        Sigm <- matrix(c(1,min(0.95,rho_vec[j]),min(0.95,rho_vec[j],1)), nrow=2, ncol=2)
+        #noise_vec[next_cand[j]] <- rcmvnorm(n=1, mean=rep(noise_vec[current_pt],2), sigma=0.5*Sigm, dep=c(2),
+        #                                    given=c(), X=c(),
+        #                                    method="eigen")
         noise_vec[next_cand[j]] <- rcmvnorm(n=1, mean=rep(noise_vec[current_pt],2), sigma=0.5*Sigm, dep=c(2),
-                                            given=c(), X=c(),
+                                            given=c(1), X=c(noise_vec[current_pt]),
                                             method="eigen")
         
         #end_cond[next_cand[j]] <- 1
@@ -430,7 +433,7 @@ is.positive.definite(adjacency_error)
 
 realweights <- as.matrix(weight_vec_candidate, ncol=1)
 
-n.iter <- 100
+n.iter <- 1#00
 #n.iter <- 5
 result_mat <- matrix(0, nrow=n.iter, ncol = 4)
 
@@ -528,9 +531,12 @@ for(ijk in 1:n.iter){
         #generate Sigma matrix
         rho_vec <- weight_vec_candidate2[next_cand]/sum(weight_vec_candidate2[next_cand])
         for(j in 1:length(next_cand)){
-          Sigm <- matrix(c(1,rho_vec[j],rho_vec[j],1), nrow=2, ncol=2)
+          Sigm <- matrix(c(1,min(0.95,rho_vec[j]),min(0.95,rho_vec[j],1)), nrow=2, ncol=2)
+          #noise_vec[next_cand[j]] <- rcmvnorm(n=1, mean=rep(noise_vec[current_pt],2), sigma=0.5*Sigm, dep=c(2),
+          #                                    given=c(), X=c(),
+          #                                    method="eigen")
           noise_vec[next_cand[j]] <- rcmvnorm(n=1, mean=rep(noise_vec[current_pt],2), sigma=0.5*Sigm, dep=c(2),
-                                              given=c(), X=c(),
+                                              given=c(1), X=c(noise_vec[current_pt]),
                                               method="eigen")
           
           #end_cond[next_cand[j]] <- 1
@@ -940,29 +946,37 @@ for(ijk in 1:n.iter){
   result_list[[ijk]] <- result_new_list
 }
 ## revision 관련 plotting (May 11, 2021)
-plot(noise_vec)
+#pdf("~/Dropbox/앱/ShareLaTeX/Thesis_Seoncheol/Stream_result/Errorcorr(2).pdf", 8.5, 4.25)
+#png("~/Dropbox/앱/ShareLaTeX/Thesis_Seoncheol/Stream_result/Errorcorr(2).png", 850, 425)
+par(mfrow=c(1,2))
+par(mar=c(5.1,4.1,4.1,2.1)/1.75)
+par(mfrow = c(1,2),
+    oma = c(0,0,0,0) + 0.1,
+    mar = c(4,4,2,0) + 0.1)
+plot(example_network2@network.line.coords$DistanceUpstream,noise_vec, main="(a)", cex.main=1.5, xlab="Distance Upstream", ylab="Residuals")
 noise_vec2 <- as.column(noise_vec)
-scatter_fill(TweedPredPoints$Longitude, TweedPredPoints$Latitude , noise_vec2[TweedPredPoints$StreamUnit], pch=16, cex=TweedPredPoints$Weights, xaxt="n", yaxt="n", zlim=zlims, main="(c) O'Donnell", cex.main=1.5, smallplot=c(0.2,0.25,0.1,0.3), y.axes = FALSE, y.axes.label=FALSE)
+zlims <- range(noise_vec2)
+scatter_fill(TweedPredPoints$Longitude, TweedPredPoints$Latitude , noise_vec2[TweedPredPoints$StreamUnit], pch=16, cex=TweedPredPoints$Weights, xaxt="n", yaxt="n", zlim=zlims, main="(b)", cex.main=1.5, smallplot=c(0.25,0.3,0.25,0.45), y.axes = FALSE, y.axes.label=FALSE)
+dev.off()
 
-
-plot(example_network2@obspoints@SSNPoints[[1]]@point.data$upDist, noise_mat0, type="n", xlim=c(0,0.6), ylim=c(-0.05,2))
-for(pli in 1:(length(noise_mat)-1)){
-  for(plj in (pli+1):length(noise_mat)){
-    if(adjacency_error[pli, plj]!=0){
-      val_imsi <- abs(example_network2@obspoints@SSNPoints[[1]]@point.data$upDist[pli]-example_network2@obspoints@SSNPoints[[1]]@point.data$upDist[plj])
-      points(exp(-(val_imsi-0.9)/0.05), abs(noise_mat[pli]-noise_mat[plj]))
-    }
-  }
-}
-plot(example_network2@obspoints@SSNPoints[[1]]@point.data$upDist, noise_mat0, type="n", xlim=c(0,0.6), ylim=c(-0.05,2))
-for(pli in 1:(length(noise_mat)-1)){
-  for(plj in (pli+1):length(noise_mat)){
-    if(adjacency_error[pli, plj]!=0){
-      val_imsi <- abs(example_network2@obspoints@SSNPoints[[1]]@point.data$upDist[pli]-example_network2@obspoints@SSNPoints[[1]]@point.data$upDist[plj])
-      points(exp(-(val_imsi-0.9)/0.05), abs(noise_mat0[pli]-noise_mat0[plj]))
-    }
-  }
-}
+#plot(example_network2@obspoints@SSNPoints[[1]]@point.data$upDist, noise_mat0, type="n", xlim=c(0,0.6), ylim=c(-0.05,2))
+#for(pli in 1:(length(noise_mat)-1)){
+#  for(plj in (pli+1):length(noise_mat)){
+#    if(adjacency_error[pli, plj]!=0){
+#      val_imsi <- abs(example_network2@obspoints@SSNPoints[[1]]@point.data$upDist[pli]-example_network2@obspoints@SSNPoints[[1]]@point.data$upDist[plj])
+#      points(exp(-(val_imsi-0.9)/0.05), abs(noise_mat[pli]-noise_mat[plj]))
+#    }
+#  }
+#}
+#plot(example_network2@obspoints@SSNPoints[[1]]@point.data$upDist, noise_mat0, type="n", xlim=c(0,0.6), ylim=c(-0.05,2))
+#for(pli in 1:(length(noise_mat)-1)){
+#  for(plj in (pli+1):length(noise_mat)){
+#    if(adjacency_error[pli, plj]!=0){
+#      val_imsi <- abs(example_network2@obspoints@SSNPoints[[1]]@point.data$upDist[pli]-example_network2@obspoints@SSNPoints[[1]]@point.data$upDist[plj])
+#      points(exp(-(val_imsi-0.9)/0.05), abs(noise_mat0[pli]-noise_mat0[plj]))
+#    }
+#  }
+#}
 
 #saveRDS(result_mat, "StreamSTPCA80(sd3).RDS")
 #saveRDS(result_mat, "StreamSTPCA40(sd05).RDS")

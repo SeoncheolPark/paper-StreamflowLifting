@@ -613,9 +613,12 @@ while(TRUE){
       #generate Sigma matrix
       rho_vec <- weight_vec_candidate2[next_cand]/sum(weight_vec_candidate2[next_cand])
       for(j in 1:length(next_cand)){
-        Sigm <- matrix(c(1,rho_vec[j],rho_vec[j],1), nrow=2, ncol=2)
+        Sigm <- matrix(c(1,min(0.95,rho_vec[j]),min(0.95,rho_vec[j],1)), nrow=2, ncol=2)
+        #noise_vec[next_cand[j]] <- rcmvnorm(n=1, mean=rep(noise_vec[current_pt],2), sigma=0.5*Sigm, dep=c(2),
+        #                                    given=c(), X=c(),
+        #                                    method="eigen")
         noise_vec[next_cand[j]] <- rcmvnorm(n=1, mean=rep(noise_vec[current_pt],2), sigma=0.5*Sigm, dep=c(2),
-                                            given=c(), X=c(),
+                                            given=c(1), X=c(noise_vec[current_pt]),
                                             method="eigen")
         
         #end_cond[next_cand[j]] <- 1
@@ -726,9 +729,12 @@ for(ijk in 1:n.iter){
         #generate Sigma matrix
         rho_vec <- weight_vec_candidate2[next_cand]/sum(weight_vec_candidate2[next_cand])
         for(j in 1:length(next_cand)){
-          Sigm <- matrix(c(1,rho_vec[j],rho_vec[j],1), nrow=2, ncol=2)
+          Sigm <- matrix(c(1,min(0.95,rho_vec[j]),min(0.95,rho_vec[j],1)), nrow=2, ncol=2)
+          #noise_vec[next_cand[j]] <- rcmvnorm(n=1, mean=rep(noise_vec[current_pt],2), sigma=0.5*Sigm, dep=c(2),
+          #                                    given=c(), X=c(),
+          #                                    method="eigen")
           noise_vec[next_cand[j]] <- rcmvnorm(n=1, mean=rep(noise_vec[current_pt],2), sigma=0.5*Sigm, dep=c(2),
-                                              given=c(), X=c(),
+                                              given=c(1), X=c(noise_vec[current_pt]),
                                               method="eigen")
           
           #end_cond[next_cand[j]] <- 1
@@ -1111,6 +1117,20 @@ for(ijk in 1:n.iter){
 }
 #saveRDS(result_mat, "StreamSim115(sd1).RDS")
 #saveRDS(result_mat, "StreamSim80(sd2)nlt.RDS")
+
+## revision 관련 plotting (May 11, 2021)
+#pdf("~/Dropbox/앱/ShareLaTeX/Thesis_Seoncheol/Stream_result/ErrorcorrMiho.pdf", 8.5, 4.25)
+#png("~/Dropbox/앱/ShareLaTeX/Thesis_Seoncheol/Stream_result/ErrorcorrMino.png", 850, 425)
+par(mfrow=c(1,2))
+par(mar=c(5.1,4.1,4.1,2.1)/1.75)
+par(mfrow = c(1,2),
+    oma = c(0,0,0,0) + 0.1,
+    mar = c(4,4,2,0) + 0.1)
+plot(example_network2@network.line.coords$DistanceUpstream,noise_vec, main="(a)", cex.main=1.5, xlab="Distance Upstream", ylab="Residuals")
+noise_vec2 <- as.column(noise_vec)
+zlims <- range(noise_vec2)
+scatter_fill(TweedPredPoints$Longitude, TweedPredPoints$Latitude , noise_vec2[TweedPredPoints$StreamUnit], pch=16, cex=TweedPredPoints$Weights, xaxt="n", yaxt="n", zlim=zlims, main="(b)", cex.main=1.5, smallplot=c(0.25,0.3,0.7,0.9), y.axes = FALSE, y.axes.label=FALSE)
+dev.off()
 
 saveRDS(result_list, "ListStreamSim40(sd1)nlt_withresidualwithtimecorr(3).RDS")
 

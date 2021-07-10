@@ -1,0 +1,1 @@
+여기 있는 파일들은 revision 2에서 correlated error 만들 때 그냥 평균에만 depend하는 univ normal로 error를 만든 것이다. 추후 condtional bivariate normal version correlated error를 개발해 그것으로 수정함.
